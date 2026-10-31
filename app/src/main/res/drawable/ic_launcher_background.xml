@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- near-black tinted with the default accent + a soft red core glow and scan grid -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android" xmlns:aapt="http://schemas.android.com/aapt"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#080103" android:pathData="M0,0h108v108h-108z" />
+    <path android:pathData="M0,0h108v108h-108z">
+        <aapt:attr name="android:fillColor">
+            <gradient android:type="radial" android:centerX="54" android:centerY="54" android:gradientRadius="54">
+                <item android:offset="0" android:color="#55FF1744" />
+                <item android:offset="0.6" android:color="#14FF1744" />
+                <item android:offset="1" android:color="#00FF1744" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <path android:strokeColor="#FF1744" android:strokeAlpha="0.10" android:strokeWidth="0.5"
+        android:pathData="M0,18h108 M0,36h108 M0,54h108 M0,72h108 M0,90h108 M18,0v108 M36,0v108 M54,0v108 M72,0v108 M90,0v108" />
+</vector>

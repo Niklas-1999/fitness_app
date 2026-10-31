@@ -11,6 +11,11 @@ import dev.niklas.ironcore.data.FoodEntity
 import dev.niklas.ironcore.data.FoodLogEntity
 import dev.niklas.ironcore.data.WeightLogEntity
 import dev.niklas.ironcore.domain.Adaptive
+import dev.niklas.ironcore.domain.Achievements
+import dev.niklas.ironcore.domain.Progress
+import dev.niklas.ironcore.data.AchievementEntity
+import dev.niklas.ironcore.data.CosmeticsEntity
+import dev.niklas.ironcore.data.Counters
 import dev.niklas.ironcore.data.IronDb
 import dev.niklas.ironcore.data.PlanSlotEntity
 import dev.niklas.ironcore.data.PlayerEntity
@@ -65,7 +70,12 @@ sealed interface AppState {
         val weights: List<WeightLogEntity>,         // last 60 days
         val adaptive: Adaptive.Result,
         val recentLadders: Set<String>,
+        val progress: Progress,
+        val achievements: Map<String, AchievementEntity>,
+        val cosmetics: CosmeticsEntity,
     ) : AppState {
+        val unlockedCosmetics get() = Achievements.unlockedCosmetics(achievements.keys)
+        val unseenAchievements get() = achievements.values.filter { !it.seen }.sortedBy { it.unlockedAt }
         val foodToday get() = foodLog.filter { it.epochDay == todayEpoch }
         val waterTodayMl get() = day?.waterMl ?: 0
         fun stateFor(id: String): ProgState = states[id] ?: PlanGenerator.initialState(id, setup)
@@ -101,8 +111,11 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    private data class Meta(val counters: Counters, val achievements: List<AchievementEntity>, val cosmetics: CosmeticsEntity?)
+    private val meta = combine(repo.counters, repo.achievements, repo.cosmetics) { a, b, c -> Meta(a, b, c) }
+
     @Suppress("UNCHECKED_CAST")
-    val state: StateFlow<AppState> = combine(core, logs, repo.foods) { c, lg, foods ->
+    val state: StateFlow<AppState> = combine(core, logs, repo.foods, meta) { c, lg, foods, mt ->
         val today = lg.today; val quests = lg.quests; val days = lg.days; val foodLog = lg.food; val weights = lg.weights
         val prof = c[0] as dev.niklas.ironcore.data.ProfileEntity?
         val player = c[1] as PlayerEntity?
@@ -140,7 +153,13 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             s, player, slots, prog.associate { it.ladderId to it.toState() }, cardio?.c25kIndex ?: 0, prof.planStartEpochDay,
             nutrition, today, day, quests, days.sumOf { it.activeMin }, directive, type,
             canReroll = day?.rerollFrom == null, foods = foods, foodLog = foodLog, weights = weights, adaptive = adaptive,
-            recentLadders = recentLadders
+            recentLadders = recentLadders,
+            progress = mt.counters.let { k ->
+                Progress(k.quests, k.clears, k.restDays, player.bestStreak, player.level, k.foodLogs, k.weighIns, k.proteinDays,
+                    k.waterDays, k.activeMinutes, cardio?.c25kIndex ?: 0, prog.associate { it.ladderId to it.step }, k.legQuests)
+            },
+            achievements = mt.achievements.associateBy { it.id },
+            cosmetics = mt.cosmetics ?: CosmeticsEntity()
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, AppState.Loading)
 
@@ -148,6 +167,33 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         ItemKind.LADDER -> ladderId!!
         ItemKind.C25K -> "c25k"
         ItemKind.WALK -> "walk"
+    }
+
+    init {
+        // achievements are evaluated reactively: any change in progress can unlock something
+        viewModelScope.launch {
+            state.collect { st ->
+                if (st is AppState.Ready) {
+                    val new = Achievements.newlyUnlocked(st.progress, st.achievements.keys)
+                    if (new.isNotEmpty()) repo.unlock(new.map { it.id })
+                }
+            }
+        }
+    }
+
+    fun markAchievementsSeen() = viewModelScope.launch { repo.markAchievementsSeen() }
+    fun saveCosmetics(c: CosmeticsEntity) = viewModelScope.launch { repo.saveCosmetics(c) }
+    fun setHandle(h: String) = viewModelScope.launch { if (h.isNotBlank()) repo.setHandle(h.trim().uppercase()) }
+    fun setImage(uri: android.net.Uri, banner: Boolean) = viewModelScope.launch {
+        val s = state.value as? AppState.Ready ?: return@launch
+        val path = dev.niklas.ironcore.ui.profile.ImageStore.save(getApplication(), uri, banner)
+        val c = s.cosmetics
+        repo.saveCosmetics(if (banner) c.copy(bannerPath = path) else c.copy(avatarPath = path))
+    }
+    fun clearImage(banner: Boolean) = viewModelScope.launch {
+        val s = state.value as? AppState.Ready ?: return@launch
+        val c = s.cosmetics
+        repo.saveCosmetics(if (banner) c.copy(bannerPath = null) else c.copy(avatarPath = null))
     }
 
     fun initialize(setup: Setup, plan: Plan) = viewModelScope.launch { repo.initialize(setup, plan) }

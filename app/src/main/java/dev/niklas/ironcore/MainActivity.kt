@@ -68,7 +68,13 @@ class MainActivity : ComponentActivity() {
                                         deleteFood = { app.deleteFood(it) },
                                         restCheckIn = { app.restCheckIn() },
                                         trainAnyway = { on -> app.trainAnyway(on) },
-                                        reinitialize = { app.wipe() }
+                                        reinitialize = { app.wipe() },
+                                        profile = { dbg -> dev.niklas.ironcore.ui.profile.ProfileActions(
+                                            saveCosmetics = { app.saveCosmetics(it) }, setHandle = { app.setHandle(it) },
+                                            setImage = { u, b -> app.setImage(u, b) }, clearImage = { app.clearImage(it) },
+                                            reinitialize = { app.wipe() }, debugRun = dbg
+                                        ) },
+                                        achievementsSeen = { app.markAchievementsSeen() }
                                     ))
                                 }
                                 else -> {}

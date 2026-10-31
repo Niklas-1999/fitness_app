@@ -13,12 +13,13 @@ import androidx.room.RoomDatabase
 @Database(
     entities = [ProfileEntity::class, PlayerEntity::class, ProgressionEntity::class, PlanSlotEntity::class,
         CardioEntity::class, WeightLogEntity::class, QuestLogEntity::class, DayLogEntity::class,
-        FoodEntity::class, FoodLogEntity::class],
-    version = 3,
+        FoodEntity::class, FoodLogEntity::class, AchievementEntity::class, CosmeticsEntity::class],
+    version = 4,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),   // v2: quest_log, day_log, attribute points
-        AutoMigration(from = 2, to = 3)    // v3: food, food_log, water / nutrition goals / reroll on day_log
+        AutoMigration(from = 2, to = 3),   // v3: food, food_log, water / nutrition goals / reroll on day_log
+        AutoMigration(from = 3, to = 4)    // v4: achievement, cosmetics
     ]
 )
 abstract class IronDb : RoomDatabase() {

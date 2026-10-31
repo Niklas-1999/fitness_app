@@ -40,6 +40,26 @@ interface IronDao {
     @Query("DELETE FROM food") suspend fun clearFoods()
     @Query("DELETE FROM food_log") suspend fun clearFoodLog()
 
+    @Query("""SELECT
+        (SELECT COUNT(*) FROM quest_log) AS quests,
+        (SELECT COUNT(*) FROM day_log WHERE cleared = 1) AS clears,
+        (SELECT COUNT(*) FROM day_log WHERE restCheckIn = 1) AS restDays,
+        (SELECT COUNT(*) FROM food_log) AS foodLogs,
+        (SELECT COUNT(*) FROM weight_log) AS weighIns,
+        (SELECT COUNT(*) FROM day_log WHERE proteinGoal = 1) AS proteinDays,
+        (SELECT COUNT(*) FROM day_log WHERE waterGoal = 1) AS waterDays,
+        (SELECT COALESCE(SUM(activeMin), 0) FROM day_log) AS activeMinutes,
+        (SELECT COUNT(*) FROM quest_log WHERE itemKey LIKE 'squat%' OR itemKey LIKE 'lunge%' OR itemKey LIKE 'hinge%') AS legQuests""")
+    fun counters(): Flow<Counters>
+    @Query("SELECT * FROM achievement") fun achievements(): Flow<List<AchievementEntity>>
+    @Query("SELECT * FROM cosmetics WHERE id = 0") fun cosmetics(): Flow<CosmeticsEntity?>
+    @Insert(onConflict = OnConflictStrategy.IGNORE) suspend fun insertAchievements(a: List<AchievementEntity>)
+    @Query("UPDATE achievement SET seen = 1") suspend fun markAchievementsSeen()
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertCosmetics(c: CosmeticsEntity)
+    @Query("UPDATE profile SET handle = :handle") suspend fun setHandle(handle: String)
+    @Query("DELETE FROM achievement") suspend fun clearAchievements()
+    @Query("DELETE FROM cosmetics") suspend fun clearCosmetics()
+
     @Insert suspend fun insertQuest(q: QuestLogEntity)
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertDay(d: DayLogEntity)
 
@@ -70,5 +90,5 @@ interface IronDao {
     }
 
     @Transaction
-    suspend fun wipe() { clearPlan(); clearProgression(); clearProfile(); clearPlayer(); clearCardio(); clearWeights(); clearQuests(); clearDays(); clearFoodLog() }
+    suspend fun wipe() { clearPlan(); clearProgression(); clearProfile(); clearPlayer(); clearCardio(); clearWeights(); clearQuests(); clearDays(); clearFoodLog(); clearAchievements(); clearCosmetics() }
 }

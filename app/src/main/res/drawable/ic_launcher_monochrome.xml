@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- themed-icon layer (Android 13+): single color silhouette of the emblem -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="2.6" android:strokeLineJoin="round"
+        android:pathData="M54,30 L74.78,42 L74.78,66 L54,78 L33.22,66 L33.22,42 Z" />
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M45,40.5 L63,40.5 L63,44 L45,44 Z M45,64 L63,64 L63,67.5 L45,67.5 Z M49,45.75 L59,45.75 L59,50.08 L49,50.08 Z M49,51.83 L59,51.83 L59,56.17 L49,56.17 Z M49,57.92 L59,57.92 L59,62.25 L49,62.25 Z" />
+</vector>

@@ -93,8 +93,9 @@ Result: a **STATUS REPORT** screen showing starting stats, rank, the generated p
   - **WIL** willpower: streak days and directive clears
 - **Ranks:** GHOST L1 · RUNNER L10 · OPERATIVE L22 · ENFORCER L33 · VANGUARD L40 · APEX L46 · **LEGEND L53**. LEGEND takes **about one year** of consistent training (simulated: 351 days at 4×/week, 289 at 5×, about 15 months at 3×).
 - **Streak:** +1 for every day with **at least 1 quest completed** (training days) or a **REST PROTOCOL check-in / any quest** (rest days). A day with neither **resets the streak to 0**. That is the only penalty.
-- **Achievements** (e.g. first directive, 7/30/100-day streak, first full push-up, first pull-up, 5 km, levels, nutrition streaks) unlock **cosmetics**: avatar frames, banners, titles under the name, name-glitch effects, panel border styles.
-- **Profile:** handle, avatar picture and banner (from the gallery via the system photo picker, so no permission is needed), equipped title, frame and banner, stats radar, records, achievement grid.
+- **Achievements (done, P5):** 27 in 5 categories (training, consistency, progression, fuel, level), in `domain/Achievements.kt`. They are evaluated reactively from lifetime counters and unlock retroactively. Each unlocks exactly one **cosmetic** (cosmetic only, no XP): 15 titles, 4 avatar frames (double hex, circuit, glitch, apex crown), 4 animated banner styles (data rain, static, neon sunset, circuit board) and 4 name effects (glitch, neon pulse, chromatic, broken neon). Unlocks show an "ACHIEVEMENT DECRYPTED" overlay.
+- **Profile (done, P5):** ID card (banner + framed hex avatar + styled handle + title + rank), records, stats radar, achievement grid with progress bars, editor (handle, avatar/banner photo via the photo picker, center-cropped and stored privately, loadout per cosmetic slot), settings, re-initialize. The HUD uses the same avatar, frame, name effect and title.
+- **Branding (done, P5):** IRONCORE emblem (hex shell, circuit nodes, counter-rotating inner hex, I-beam core of three iron plates with a reactor line), drawn in code and theme-colored (`IroncoreLogo`). Adaptive launcher icon from the same geometry, with a monochrome layer for themed icons.
 
 ## 7. Nutrition: "FUEL"
 

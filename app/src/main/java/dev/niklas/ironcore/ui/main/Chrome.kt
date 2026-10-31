@@ -104,7 +104,7 @@ fun TopBar(onTheme: () -> Unit) {
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        HexBadge("⚡", Modifier.size(38.dp, 42.dp), small = true)
+        dev.niklas.ironcore.ui.profile.IroncoreLogo(Modifier.size(44.dp))
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
             GlitchText("IRONCORE", T.head(16.sp, p.accent, glow = 18f, weight = 900, spacing = .08.em))

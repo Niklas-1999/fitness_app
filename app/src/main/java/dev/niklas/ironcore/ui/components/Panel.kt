@@ -119,7 +119,7 @@ fun CyberPanel(
             }
             .clip(ChamferShape(cut))
             .background(p.panel)
-            .padding(start = padding, end = padding, top = padding - 2.dp, bottom = padding)
+            .padding(start = padding, end = padding, top = (padding - 2.dp).coerceAtLeast(0.dp), bottom = padding)
     ) {
         Column(content = content)
     }

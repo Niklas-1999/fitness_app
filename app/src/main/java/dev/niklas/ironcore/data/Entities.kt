@@ -203,3 +203,32 @@ data class FoodLogEntity(
     val fibre: Float,
     val timestamp: Long
 )
+
+/** Unlocked achievements (DB v4). */
+@Entity(tableName = "achievement")
+data class AchievementEntity(@PrimaryKey val id: String, val unlockedAt: Long, val seen: Boolean = false)
+
+/** Profile cosmetics and custom images (DB v4). Single row. */
+@Entity(tableName = "cosmetics")
+data class CosmeticsEntity(
+    @PrimaryKey val id: Int = 0,
+    val avatarPath: String? = null,
+    val bannerPath: String? = null,
+    val title: String = "t_newblood",
+    val frame: String = "f_hex",
+    val banner: String = "b_grid",
+    val nameFx: String = "n_none"
+)
+
+/** Lifetime counters for achievements (query result, not a table). */
+data class Counters(
+    val quests: Int,
+    val clears: Int,
+    val restDays: Int,
+    val foodLogs: Int,
+    val weighIns: Int,
+    val proteinDays: Int,
+    val waterDays: Int,
+    val activeMinutes: Int,
+    val legQuests: Int
+)

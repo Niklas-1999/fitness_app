@@ -64,6 +64,14 @@ class Repo(private val db: IronDb) {
     val foods = dao.foods()
     fun foodLogSince(day: Long) = dao.foodLogSince(day)
     fun weightsSince(day: Long) = dao.weightsSince(day)
+    val counters = dao.counters()
+    val achievements = dao.achievements()
+    val cosmetics = dao.cosmetics()
+
+    suspend fun unlock(ids: List<String>) = dao.insertAchievements(ids.map { AchievementEntity(it, System.currentTimeMillis()) })
+    suspend fun markAchievementsSeen() = dao.markAchievementsSeen()
+    suspend fun saveCosmetics(c: CosmeticsEntity) = dao.upsertCosmetics(c)
+    suspend fun setHandle(h: String) = dao.setHandle(h)
 
     private fun today() = LocalDate.now().toEpochDay()
 

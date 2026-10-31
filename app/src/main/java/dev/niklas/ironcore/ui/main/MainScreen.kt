@@ -74,7 +74,9 @@ class MainActions(
     val deleteFood: (Long) -> Unit,
     val restCheckIn: () -> Unit,
     val trainAnyway: (Boolean) -> Unit,
-    val reinitialize: () -> Unit
+    val reinitialize: () -> Unit,
+    val profile: (debugRun: () -> Unit) -> dev.niklas.ironcore.ui.profile.ProfileActions,
+    val achievementsSeen: () -> Unit
 )
 
 @Composable
@@ -106,7 +108,7 @@ fun MainScreen(s: AppState.Ready, result: QuestResult?, onResultShown: () -> Uni
                         openFoodSheet = { fx.glitch(); foodSheet = true },
                         deleteLog = actions.fuel.deleteLog, addWater = actions.fuel.addWater, logWeight = actions.fuel.logWeight
                     ))
-                    else -> ProfileTab(s, actions.reinitialize) { fx.glitch(); running = TodayItem("debug_run", ItemKind.C25K, null, 0) }
+                    else -> dev.niklas.ironcore.ui.profile.ProfileTab(s, actions.profile { fx.glitch(); running = TodayItem("debug_run", ItemKind.C25K, null, 0) })
                 }
             }
             BottomNav(tab) { tab = it }
@@ -132,6 +134,8 @@ fun MainScreen(s: AppState.Ready, result: QuestResult?, onResultShown: () -> Uni
             }
         }
         levelUp?.let { LevelUpTerminal(it) { levelUp = null } }
+        if (running == null && levelUp == null && result == null && !foodSheet && s.unseenAchievements.isNotEmpty())
+            dev.niklas.ironcore.ui.profile.AchievementOverlay(s) { actions.achievementsSeen() }
     }
 }
 
@@ -167,11 +171,11 @@ private fun OperativePanel(s: AppState.Ready) {
     CyberPanel(Modifier.fillMaxWidth(), delayMs = 50) {
         PanelHeader("01", "OPERATIVE_STATUS", "LOCAL", live = true)
         Row(verticalAlignment = Alignment.CenterVertically) {
-            HexBadge(s.setup.handle.take(1), Modifier.size(62.dp, 70.dp))
+            dev.niklas.ironcore.ui.profile.Avatar(s.cosmetics.avatarPath, s.cosmetics.frame, s.setup.handle.take(1), Modifier.size(62.dp, 70.dp))
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Txt(s.setup.handle, T.head(18.sp, Color.White, glow = 10f, weight = 900))
-                Txt("RANK // ${Leveling.rank(pl.level).name}", T.mono(11.sp, p.textDim))
+                dev.niklas.ironcore.ui.profile.StyledName(s.setup.handle, s.cosmetics.nameFx, T.head(18.sp, Color.White, glow = 10f, weight = 900))
+                Txt("« ${dev.niklas.ironcore.ui.profile.titleOf(s.cosmetics.title)} »  ${Leveling.rank(pl.level).name}", T.mono(11.sp, p.textDim))
                 Spacer(Modifier.height(4.dp))
                 Row(verticalAlignment = Alignment.Bottom) {
                     Txt("LV ", T.mono(12.sp, p.textDim))
@@ -354,37 +358,6 @@ private fun RecentOps(s: AppState.Ready) {
                     Txt(detail + " · " + q.rating + if (q.deload) " · DELOAD" else "", T.mono(10.sp, p.textDim))
                 }
                 Txt("+${q.xp}", T.mono(12.sp, CyberPalette.UP))
-            }
-        }
-    }
-}
-
-@Composable
-private fun ProfileTab(s: AppState.Ready, onReinitialize: () -> Unit, onDebugRun: () -> Unit) {
-    val p = Cyber.c
-    val fx = LocalFx.current
-    var sound by remember { mutableStateOf(fx.soundOn) }
-    var haptics by remember { mutableStateOf(fx.hapticsOn) }
-    var confirm by remember { mutableStateOf(false) }
-    Scroll {
-        OperativePanel(s)
-        CyberPanel(Modifier.fillMaxWidth()) {
-            PanelHeader("CFG", "SYSTEM_SETTINGS")
-            OptionCard("SOUND EFFECTS", if (sound) "ON" else "OFF", sound, Modifier.padding(bottom = 8.dp)) { sound = !sound; fx.soundOn = sound }
-            OptionCard("HAPTICS", if (haptics) "ON" else "OFF", haptics) { haptics = !haptics; fx.hapticsOn = haptics }
-        }
-        if (androidx.compose.ui.platform.LocalContext.current.packageName.endsWith(".debug")) CyberPanel(Modifier.fillMaxWidth()) {
-            PanelHeader("DBG", "DEBUG_TOOLS", "DEV BUILD ONLY")
-            CyberButton("TEST RUN TIMER (NOT SAVED)", Modifier.fillMaxWidth(), BtnStyle.OUTLINE) { onDebugRun() }
-        }
-        CyberPanel(Modifier.fillMaxWidth()) {
-            PanelHeader("!!", "RE-INITIALIZE", "DESTRUCTIVE")
-            Txt("Deletes your profile, plan and progress on this device and restarts the setup.", T.body(14.sp, p.textDim))
-            Spacer(Modifier.height(10.dp))
-            if (!confirm) CyberButton("RE-INITIALIZE SYSTEM", Modifier.fillMaxWidth(), BtnStyle.OUTLINE) { fx.error(); confirm = true }
-            else Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                CyberButton("CANCEL", Modifier.weight(1f), BtnStyle.OUTLINE) { confirm = false }
-                CyberButton("CONFIRM WIPE", Modifier.weight(1f)) { fx.glitch(); onReinitialize() }
             }
         }
     }
