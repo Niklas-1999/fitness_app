@@ -1,4 +1,4 @@
-package dev.niklas.fitnessrpg.ui.components
+package dev.niklas.ironcore.ui.components
 
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.animation.core.Animatable
@@ -30,8 +30,8 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import dev.niklas.fitnessrpg.ui.theme.Cyber
-import dev.niklas.fitnessrpg.ui.theme.CyberPalette
+import dev.niklas.ironcore.ui.theme.Cyber
+import dev.niklas.ironcore.ui.theme.CyberPalette
 import kotlin.math.cos
 import kotlin.math.sin
 

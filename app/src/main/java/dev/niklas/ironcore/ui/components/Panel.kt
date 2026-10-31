@@ -1,4 +1,4 @@
-package dev.niklas.fitnessrpg.ui.components
+package dev.niklas.ironcore.ui.components
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.CubicBezierEasing
@@ -49,10 +49,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.niklas.fitnessrpg.audio.LocalFx
-import dev.niklas.fitnessrpg.ui.theme.Cyber
-import dev.niklas.fitnessrpg.ui.theme.CyberPalette
-import dev.niklas.fitnessrpg.ui.theme.T
+import dev.niklas.ironcore.audio.LocalFx
+import dev.niklas.ironcore.ui.theme.Cyber
+import dev.niklas.ironcore.ui.theme.CyberPalette
+import dev.niklas.ironcore.ui.theme.T
 
 /** Polygon with the top-right and bottom-left corners cut off (the dashboard's clip-path). */
 fun chamferPath(size: Size, cut: Float) = Path().apply {

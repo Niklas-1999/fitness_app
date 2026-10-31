@@ -9,16 +9,15 @@ Repo: https://github.com/Niklas-1999/fitness_app (public; clone over SSH: `git@g
 - **Done:**
   - Toolchain and live dev loop (`./dev.sh`, scrcpy mirror, ~20 s edit→phone).
   - **Research** for all training/nutrition rules, with sources → `RESEARCH.md`. Use only numbers from there.
-  - **`SPEC.md` written (draft, waiting for Niklas's approval).** It contains Niklas's product vision: onboarding questionnaire → generated plan with projections → daily quests (RPG) → XP/levels/stats/streak, rest-day mechanic, nutrition targets + EU label scanner, profile/achievements/cosmetics. Levelling curve and anti-overtraining XP are simulated in `tools/level_curve.py`.
-  - **P0 visual system built and running on the phone:** theme engine (one accent → whole palette, 12 presets + custom picker, persisted), Cryptobro-style panels/frames/fonts, animated backdrop (grid, sun, data rain, dust, glitch bars), scanlines/vignette/sweep, boot sequence, glitch text, animated XP/neon bars, stat radar, fuel gauge, level-up overlay, synthesized SFX (`tools/gen_sfx.py`) + haptics. The current screen is a **demo HUD with mock data** (`ui/demo/HudDemo.kt`).
+  - **`SPEC.md` approved** (see its decisions log). It contains Niklas's product vision: onboarding questionnaire → generated plan with projections → daily quests (RPG) → XP/levels/stats/streak, rest-day mechanic, nutrition targets + EU label scanner, profile/achievements/cosmetics. Levelling curve and anti-overtraining XP are simulated in `tools/level_curve.py`.
+  - **P0 visual system built and running on the phone:** theme engine (one accent → whole palette, 12 presets + custom picker, persisted), Cryptobro-style panels/frames/fonts, animated backdrop (grid, sun, data rain, dust, glitch bars), scanlines/vignette/sweep, boot sequence, glitch text, animated XP/neon bars, stat radar, fuel gauge, terminal-style level-up (`LevelUp.kt`), hacker-style synthesized SFX (`tools/gen_sfx.py`) + haptics. The current screen is a **demo HUD with mock data** (`ui/demo/HudDemo.kt`). Its bottom tabs switch to "module offline" placeholders. Niklas's feedback on it: sounds and level-up should be hacker-style, not cheerful (done).
 - **Visual reference:** Niklas's dashboard https://github.com/Niklas-1999/Cryptobro (live: https://niklas-1999.github.io/Cryptobro/). He wants **exactly that over-the-top cyberpunk style** everywhere. No rounded "AI-style" minimalism.
-- **Placeholder IDs:** package `dev.niklas.fitnessrpg` (debug: `.debug`), title "FITNESS_RPG". Rename once a name is chosen, **before** the first release install.
+- **App name: IRONCORE**, package `dev.niklas.ironcore` (debug build: `dev.niklas.ironcore.debug`). Never change the package after the first release install.
 
 ## Next steps
 
-1. Get Niklas's answers to the open questions in `SPEC.md` §11 (app name, stats/rank names, streak/rest rules, deferring online features) and his approval of the spec.
-2. Build **P1**: Room DB (with migrations) + onboarding questionnaire + calibration test + plan generator + status report/forecast.
-3. Then continue P2–P6 in the order given in `SPEC.md` §10.
+1. Build **P1**: Room DB (with migrations) + onboarding questionnaire + calibration test + plan generator + status report/forecast.
+2. Then continue P2–P6 in the order given in `SPEC.md` §10.
 
 ## Dev loop (how Niklas sees changes live)
 

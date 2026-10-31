@@ -1,4 +1,4 @@
-package dev.niklas.fitnessrpg.ui.fx
+package dev.niklas.ironcore.ui.fx
 
 import androidx.compose.ui.graphics.nativeCanvas
 import android.graphics.Paint
@@ -22,9 +22,9 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.res.ResourcesCompat
-import dev.niklas.fitnessrpg.R
-import dev.niklas.fitnessrpg.ui.theme.Cyber
-import dev.niklas.fitnessrpg.ui.theme.CyberPalette
+import dev.niklas.ironcore.R
+import dev.niklas.ironcore.ui.theme.Cyber
+import dev.niklas.ironcore.ui.theme.CyberPalette
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.max

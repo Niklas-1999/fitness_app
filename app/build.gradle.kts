@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "dev.niklas.fitnessrpg"
+    namespace = "dev.niklas.ironcore"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "dev.niklas.fitnessrpg"
+        applicationId = "dev.niklas.ironcore"
         minSdk = 26
         targetSdk = 35
         versionCode = 1

@@ -1,6 +1,6 @@
-package dev.niklas.fitnessrpg.ui.demo
+package dev.niklas.ironcore.ui.demo
 
-import dev.niklas.fitnessrpg.ui.components.Txt
+import dev.niklas.ironcore.ui.components.Txt
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -61,21 +61,23 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import dev.niklas.fitnessrpg.audio.LocalFx
-import dev.niklas.fitnessrpg.ui.components.BtnStyle
-import dev.niklas.fitnessrpg.ui.components.CountUpText
-import dev.niklas.fitnessrpg.ui.components.CyberButton
-import dev.niklas.fitnessrpg.ui.components.CyberPanel
-import dev.niklas.fitnessrpg.ui.components.GlitchText
-import dev.niklas.fitnessrpg.ui.components.NeonBar
-import dev.niklas.fitnessrpg.ui.components.PanelHeader
-import dev.niklas.fitnessrpg.ui.components.StatBox
-import dev.niklas.fitnessrpg.ui.components.StatRadar
-import dev.niklas.fitnessrpg.ui.components.chamferPath
-import dev.niklas.fitnessrpg.ui.theme.Cyber
-import dev.niklas.fitnessrpg.ui.theme.CyberPalette
-import dev.niklas.fitnessrpg.ui.theme.T
-import dev.niklas.fitnessrpg.ui.theme.ThemePickerOverlay
+import dev.niklas.ironcore.audio.LocalFx
+import dev.niklas.ironcore.ui.components.BtnStyle
+import dev.niklas.ironcore.ui.components.CountUpText
+import dev.niklas.ironcore.ui.components.CyberButton
+import dev.niklas.ironcore.ui.components.CyberPanel
+import dev.niklas.ironcore.ui.components.GlitchText
+import dev.niklas.ironcore.ui.components.LevelUpInfo
+import dev.niklas.ironcore.ui.components.LevelUpTerminal
+import dev.niklas.ironcore.ui.components.NeonBar
+import dev.niklas.ironcore.ui.components.PanelHeader
+import dev.niklas.ironcore.ui.components.StatBox
+import dev.niklas.ironcore.ui.components.StatRadar
+import dev.niklas.ironcore.ui.components.chamferPath
+import dev.niklas.ironcore.ui.theme.Cyber
+import dev.niklas.ironcore.ui.theme.CyberPalette
+import dev.niklas.ironcore.ui.theme.T
+import dev.niklas.ironcore.ui.theme.ThemePickerOverlay
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -93,6 +95,9 @@ private val QUESTS = listOf(
 )
 private val STAT_NAMES = listOf("STR", "END", "AGI", "VIT", "WIL")
 
+private val RANKS = listOf("GHOST" to 1, "RUNNER" to 10, "OPERATIVE" to 22, "ENFORCER" to 33, "VANGUARD" to 40, "APEX" to 46, "LEGEND" to 53)
+private fun rankIndex(level: Int) = RANKS.indexOfLast { level >= it.second }
+
 private fun xpToNext(level: Int) = maxOf(60, Math.round(84 * Math.pow(1.075, level.toDouble()) - 10).toInt())
 
 @Composable
@@ -105,7 +110,9 @@ fun HudDemo() {
     val done = remember { mutableStateListOf(false, false, false, false) }
     var streak by remember { mutableIntStateOf(12) }
     var showTheme by remember { mutableStateOf(false) }
-    var levelUp by remember { mutableStateOf<Int?>(null) }
+    var levelUp by remember { mutableStateOf<LevelUpInfo?>(null) }
+    val statsAtLastLevel = remember { mutableStateListOf(12, 9, 6, 11, 11) }
+    var tab by remember { mutableIntStateOf(0) }
     var popup by remember { mutableStateOf<Pair<Int, String>?>(null) }
     var popupKey by remember { mutableIntStateOf(0) }
 
@@ -123,7 +130,14 @@ fun HudDemo() {
         if (nx >= xpToNext(level)) {
             nx -= xpToNext(level)
             level++
-            levelUp = level
+            val r = rankIndex(level)
+            val next = RANKS.getOrNull(r + 1)
+            levelUp = LevelUpInfo(
+                level - 1, level, STAT_NAMES, statsAtLastLevel.toList(), stats.toList(),
+                RANKS[r].first, next?.first,
+                if (next == null) 1f else (level - RANKS[r].second) / (next.second - RANKS[r].second).toFloat()
+            )
+            statsAtLastLevel.clear(); statsAtLastLevel.addAll(stats)
         }
         xp = nx
         if (i == 0 && done.count { it } == 1) { streak++; fx.streak() }
@@ -137,7 +151,9 @@ fun HudDemo() {
         ) {
             TopBar(onTheme = { fx.glitch(); showTheme = true })
             Tape(level, streak, stats)
-            Column(
+            if (tab != 0) {
+                ModuleOffline(listOf("HUD", "QUESTS", "FUEL", "PROFILE")[tab], Modifier.weight(1f))
+            } else Column(
                 Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
@@ -152,7 +168,7 @@ fun HudDemo() {
                         Spacer(Modifier.width(14.dp))
                         Column(Modifier.weight(1f)) {
                             Txt("NIKLAS", T.head(18.sp, Color.White, glow = 10f, weight = 900))
-                            Txt("RANK // RUNNER", T.mono(11.sp, p.textDim))
+                            Txt("RANK // ${RANKS[rankIndex(level)].first}", T.mono(11.sp, p.textDim))
                             Spacer(Modifier.height(4.dp))
                             Row(verticalAlignment = Alignment.Bottom) {
                                 Txt("LV ", T.mono(12.sp, p.textDim))
@@ -213,13 +229,13 @@ fun HudDemo() {
                 }
                 Spacer(Modifier.height(8.dp))
             }
-            BottomNav()
+            BottomNav(tab) { tab = it }
         }
 
         AnimatedVisibility(showTheme, enter = fadeIn(), exit = fadeOut()) {
             ThemePickerOverlay { showTheme = false }
         }
-        levelUp?.let { lv -> LevelUpOverlay(lv) { levelUp = null } }
+        levelUp?.let { info -> LevelUpTerminal(info) { levelUp = null } }
     }
 }
 
@@ -247,7 +263,7 @@ private fun TopBar(onTheme: () -> Unit) {
         HexBadge("⚡", Modifier.size(38.dp, 42.dp), small = true)
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
-            GlitchText("FITNESS_RPG", T.head(16.sp, p.accent, glow = 18f, weight = 900, spacing = .08.em))
+            GlitchText("IRONCORE", T.head(16.sp, p.accent, glow = 18f, weight = 900, spacing = .08.em))
             Txt("NEURAL TRAINING TERMINAL", T.mono(8.sp, p.textDim, .18.em), maxLines = 1, softWrap = false)
         }
         Column(horizontalAlignment = Alignment.End) {
@@ -401,62 +417,18 @@ private fun XpPopup(popup: Pair<Int, String>?, key: Int) {
     }
 }
 
-/* ---------- level up ---------- */
+/* ---------- placeholder modules ---------- */
 
 @Composable
-private fun LevelUpOverlay(level: Int, onDismiss: () -> Unit) {
+private fun ModuleOffline(name: String, modifier: Modifier) {
     val p = Cyber.c
-    val fx = LocalFx.current
-    val intro = remember { Animatable(0f) }
-    LaunchedEffect(level) {
-        fx.levelUp()
-        intro.animateTo(1f, tween(900, easing = FastOutSlowInEasing))
-    }
-    val spin by rememberInfiniteTransition(label = "lu").animateFloat(0f, 360f, infiniteRepeatable(tween(12000, easing = LinearEasing)), label = "r")
-    Box(
-        Modifier
-            .fillMaxSize()
-            .background(Color.Black.copy(alpha = .75f * intro.value))
-            .clickable(remember { MutableInteractionSource() }, null) { onDismiss() },
-        contentAlignment = Alignment.Center
-    ) {
-        // rays + rings
-        Canvas(Modifier.fillMaxSize().graphicsLayer { alpha = intro.value }) {
-            val c = center
-            rotate(spin, c) {
-                for (i in 0 until 24) {
-                    rotate(i * 15f, c) {
-                        drawLine(p.acc(if (i % 2 == 0) .18f else .08f), c, Offset(c.x, c.y - size.maxDimension), 18.dp.toPx(), StrokeCap.Butt)
-                    }
-                }
-            }
-            for (k in 0 until 3) {
-                val r = (90 + k * 45).dp.toPx() * (0.6f + .4f * intro.value)
-                drawCircle(p.acc(.5f - k * .14f), r, c, style = Stroke((2 - k * .5f).dp.toPx()))
-            }
-            // initial white flash
-            val flash = (1f - intro.value * 4f).coerceIn(0f, 1f)
-            if (flash > 0f) drawRect(Color.White.copy(alpha = flash * .8f))
-        }
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.graphicsLayer {
-                val s = .6f + .4f * intro.value; scaleX = s; scaleY = s; alpha = intro.value
-            }
-        ) {
-            Txt("// SYSTEM NOTICE //", T.mono(11.sp, p.textDim, .3.em))
-            Spacer(Modifier.height(8.dp))
-            GlitchText("LEVEL UP", T.head(46.sp, p.accent, glow = 30f, weight = 900, spacing = .08.em), periodMs = 1200)
-            Spacer(Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Txt("LV ${level - 1}", T.mono(20.sp, p.textDim))
-                Txt("  ▶  ", T.mono(20.sp, p.accent))
-                Txt("LV $level", T.head(30.sp, Color.White, glow = 24f, weight = 900))
-            }
-            Spacer(Modifier.height(14.dp))
-            Txt("+3 ATTRIBUTE POINTS AVAILABLE", T.mono(12.sp, CyberPalette.UP, glow = CyberPalette.UP))
-            Spacer(Modifier.height(30.dp))
-            Txt("[ TAP TO CONTINUE ]", T.mono(10.sp, p.textMute, .3.em))
+    val phase = mapOf("QUESTS" to "P2", "FUEL" to "P3 / P4", "PROFILE" to "P5")[name]
+    Box(modifier.fillMaxWidth().padding(12.dp), contentAlignment = Alignment.TopCenter) {
+        CyberPanel(Modifier.fillMaxWidth()) {
+            PanelHeader("--", "${name}_MODULE", "OFFLINE")
+            Txt("> LOCATING MODULE ${name} ........ FAIL\n> STATUS: NOT YET COMPILED\n> SCHEDULED FOR BUILD PHASE $phase", T.mono(12.sp, p.accent, 0.sp, glow = p.acc(.5f)))
+            Spacer(Modifier.height(12.dp))
+            GlitchText("// AWAITING DEPLOYMENT", T.head(13.sp, p.textDim, glow = 0f))
         }
     }
 }
@@ -510,10 +482,9 @@ private fun MacroRow(name: String, v: Number, t: Number, unit: String) {
 /* ---------- bottom nav ---------- */
 
 @Composable
-private fun BottomNav() {
+private fun BottomNav(sel: Int, onSelect: (Int) -> Unit) {
     val p = Cyber.c
     val fx = LocalFx.current
-    var sel by remember { mutableIntStateOf(0) }
     val tabs = listOf("HUD", "QUESTS", "FUEL", "PROFILE")
     Row(
         Modifier
@@ -536,7 +507,7 @@ private fun BottomNav() {
                             drawPath(path, p.accent)
                         } else drawPath(path, p.line, style = Stroke(1.dp.toPx()))
                     }
-                    .clickable(remember { MutableInteractionSource() }, null) { fx.tap(); sel = i },
+                    .clickable(remember { MutableInteractionSource() }, null) { if (i != sel) { fx.glitch(); onSelect(i) } },
                 contentAlignment = Alignment.Center
             ) {
                 Txt(t, T.mono(12.sp, if (on) Color.Black else p.textDim, .14.em))

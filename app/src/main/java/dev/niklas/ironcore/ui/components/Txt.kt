@@ -1,4 +1,4 @@
-package dev.niklas.fitnessrpg.ui.components
+package dev.niklas.ironcore.ui.components
 
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable

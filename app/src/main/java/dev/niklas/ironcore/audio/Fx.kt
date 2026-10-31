@@ -1,4 +1,4 @@
-package dev.niklas.fitnessrpg.audio
+package dev.niklas.ironcore.audio
 
 import android.content.Context
 import android.media.AudioAttributes
@@ -7,7 +7,7 @@ import android.os.Build
 import android.view.HapticFeedbackConstants
 import android.view.View
 import androidx.compose.runtime.staticCompositionLocalOf
-import dev.niklas.fitnessrpg.R
+import dev.niklas.ironcore.R
 
 /** Sound effects (SoundPool, low latency) + haptics. One instance per activity. */
 class Fx(context: Context) {

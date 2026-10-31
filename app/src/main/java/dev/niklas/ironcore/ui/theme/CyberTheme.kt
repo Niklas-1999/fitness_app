@@ -1,4 +1,4 @@
-package dev.niklas.fitnessrpg.ui.theme
+package dev.niklas.ironcore.ui.theme
 
 import android.content.Context
 import androidx.compose.runtime.Composable

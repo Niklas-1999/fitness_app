@@ -1,6 +1,6 @@
-package dev.niklas.fitnessrpg.ui.boot
+package dev.niklas.ironcore.ui.boot
 
-import dev.niklas.fitnessrpg.ui.components.Txt
+import dev.niklas.ironcore.ui.components.Txt
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -37,12 +37,12 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import dev.niklas.fitnessrpg.audio.LocalFx
-import dev.niklas.fitnessrpg.ui.components.GlitchText
-import dev.niklas.fitnessrpg.ui.components.NeonBar
-import dev.niklas.fitnessrpg.ui.theme.Cyber
-import dev.niklas.fitnessrpg.ui.theme.CyberPalette
-import dev.niklas.fitnessrpg.ui.theme.T
+import dev.niklas.ironcore.audio.LocalFx
+import dev.niklas.ironcore.ui.components.GlitchText
+import dev.niklas.ironcore.ui.components.NeonBar
+import dev.niklas.ironcore.ui.theme.Cyber
+import dev.niklas.ironcore.ui.theme.CyberPalette
+import dev.niklas.ironcore.ui.theme.T
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

@@ -1,6 +1,6 @@
-package dev.niklas.fitnessrpg.ui.theme
+package dev.niklas.ironcore.ui.theme
 
-import dev.niklas.fitnessrpg.ui.components.Txt
+import dev.niklas.ironcore.ui.components.Txt
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -37,11 +37,11 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import dev.niklas.fitnessrpg.audio.LocalFx
-import dev.niklas.fitnessrpg.ui.components.BtnStyle
-import dev.niklas.fitnessrpg.ui.components.CyberButton
-import dev.niklas.fitnessrpg.ui.components.CyberPanel
-import dev.niklas.fitnessrpg.ui.components.PanelHeader
+import dev.niklas.ironcore.audio.LocalFx
+import dev.niklas.ironcore.ui.components.BtnStyle
+import dev.niklas.ironcore.ui.components.CyberButton
+import dev.niklas.ironcore.ui.components.CyberPanel
+import dev.niklas.ironcore.ui.components.PanelHeader
 
 private fun hsv(h: Float, s: Float, v: Float) = Color.hsv(h.coerceIn(0f, 359.9f), s.coerceIn(0f, 1f), v.coerceIn(0f, 1f))
 

@@ -1,4 +1,4 @@
-package dev.niklas.fitnessrpg.ui.theme
+package dev.niklas.ironcore.ui.theme
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
@@ -12,7 +12,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
-import dev.niklas.fitnessrpg.R
+import dev.niklas.ironcore.R
 
 /** Orbitron is a variable font; one file, three weights. */
 @OptIn(ExperimentalTextApi::class)
