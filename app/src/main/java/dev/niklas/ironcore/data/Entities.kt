@@ -156,5 +156,50 @@ data class DayLogEntity(
     val restCheckIn: Boolean = false,
     val trainAnyway: Boolean = false,
     val cleared: Boolean = false,
-    val activeMin: Int = 0
+    val activeMin: Int = 0,
+    // DB v3
+    @ColumnInfo(defaultValue = "0") val waterMl: Int = 0,
+    @ColumnInfo(defaultValue = "0") val proteinGoal: Boolean = false,
+    @ColumnInfo(defaultValue = "0") val waterGoal: Boolean = false,
+    /** daily reroll: the directive key that was replaced and the ladder that replaces it */
+    val rerollFrom: String? = null,
+    val rerollTo: String? = null
+)
+
+/** Saved food with EU nutrition declaration values per 100 g / 100 ml (RESEARCH §12). DB v3. */
+@Entity(tableName = "food")
+data class FoodEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val kcal: Float,
+    val fat: Float,
+    val satFat: Float,
+    val carbs: Float,
+    val sugar: Float,
+    val protein: Float,
+    val salt: Float,
+    val fibre: Float?,
+    /** last portion in grams, offered as default */
+    val portionG: Float = 100f,
+    val uses: Int = 0,
+    val lastUsed: Long = 0
+)
+
+/** One eaten portion; values already scaled to the grams eaten (kept even if the food is edited). DB v3. */
+@Entity(tableName = "food_log", indices = [Index("epochDay")])
+data class FoodLogEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val epochDay: Long,
+    val foodId: Long?,
+    val name: String,
+    val grams: Float,
+    val kcal: Float,
+    val fat: Float,
+    val satFat: Float,
+    val carbs: Float,
+    val sugar: Float,
+    val protein: Float,
+    val salt: Float,
+    val fibre: Float,
+    val timestamp: Long
 )

@@ -216,6 +216,26 @@ object PlanGenerator {
         }
     }
 
+    /** Every ladder the user's equipment allows (the "arsenal"), in a stable pattern order. */
+    fun arsenal(equip: Set<Equip>): List<Ladder> =
+        Exercises.ALL.filter { equip.containsAll(it.requires) }.sortedBy { it.pattern.ordinal }
+
+    /**
+     * Daily reroll replacement for [fromLadder]: another ladder of the same movement pattern if the
+     * equipment allows, otherwise a fresh strength ladder from the plan (not in today's directive,
+     * not trained in the last 48 h).
+     */
+    fun rerollTarget(fromLadder: String, equip: Set<Equip>, directive: Set<String>, planLadders: List<String>, recent: Set<String>): String? {
+        val from = Exercises.ladder(fromLadder)
+        val same = arsenal(equip).filter { it.pattern == from.pattern && it.id != fromLadder && it.id !in directive }
+        same.firstOrNull { it.isLoad != from.isLoad }?.let { return it.id }
+        same.firstOrNull()?.let { return it.id }
+        val core = setOf(Pattern.CORE, Pattern.CORE_SIDE, Pattern.BALANCE)
+        return planLadders.distinct().firstOrNull {
+            it !in directive && it !in recent && (from.pattern in core) == (Exercises.ladder(it).pattern in core)
+        } ?: arsenal(equip).firstOrNull { it.id !in directive && it.id != fromLadder }?.id
+    }
+
     /** Starting attributes from the calibration scan (game design, not science). */
     fun initialStats(s: Setup): IntArray {
         val str = 5 + s.pushStep * 2 + minOf(s.pushReps, 40) / 5 + minOf(s.squatReps, 50) / 10 + minOf(s.pullReps ?: 0, 15) / 3

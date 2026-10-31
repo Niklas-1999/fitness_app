@@ -62,6 +62,10 @@ class MainActivity : ComponentActivity() {
                                 AppState.Ready::class -> (state as? AppState.Ready)?.let {
                                     MainScreen(it, app.lastResult, { app.lastResult = null }, MainActions(
                                         complete = { item, r, load, min -> app.complete(item, r, load, min) },
+                                        reroll = { app.reroll(it) },
+                                        fuel = dev.niklas.ironcore.ui.fuel.FuelActions({}, { app.deleteFoodLog(it) }, { app.addWater(it) }, { app.logWeight(it) }),
+                                        logFood = { f, g, save -> app.logFood(f, g, save) },
+                                        deleteFood = { app.deleteFood(it) },
                                         restCheckIn = { app.restCheckIn() },
                                         trainAnyway = { on -> app.trainAnyway(on) },
                                         reinitialize = { app.wipe() }

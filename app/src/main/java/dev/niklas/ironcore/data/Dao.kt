@@ -26,6 +26,20 @@ interface IronDao {
     @Query("SELECT itemKey FROM quest_log WHERE epochDay = :day") suspend fun keysOnDay(day: Long): List<String>
     @Query("SELECT * FROM cardio WHERE id = 0") suspend fun cardioNow(): CardioEntity?
 
+    @Query("SELECT * FROM food ORDER BY lastUsed DESC, uses DESC") fun foods(): Flow<List<FoodEntity>>
+    @Query("SELECT * FROM food_log WHERE epochDay >= :from ORDER BY timestamp DESC") fun foodLogSince(from: Long): Flow<List<FoodLogEntity>>
+    @Query("SELECT * FROM weight_log WHERE epochDay >= :from ORDER BY epochDay") fun weightsSince(from: Long): Flow<List<WeightLogEntity>>
+    @Query("SELECT COALESCE(SUM(protein), 0) FROM food_log WHERE epochDay = :day") suspend fun proteinOn(day: Long): Float
+    @Query("SELECT * FROM food WHERE id = :id") suspend fun foodNow(id: Long): FoodEntity?
+
+    @Insert suspend fun insertFood(f: FoodEntity): Long
+    @androidx.room.Update suspend fun updateFood(f: FoodEntity)
+    @Query("DELETE FROM food WHERE id = :id") suspend fun deleteFood(id: Long)
+    @Insert suspend fun insertFoodLog(f: FoodLogEntity)
+    @Query("DELETE FROM food_log WHERE id = :id") suspend fun deleteFoodLog(id: Long)
+    @Query("DELETE FROM food") suspend fun clearFoods()
+    @Query("DELETE FROM food_log") suspend fun clearFoodLog()
+
     @Insert suspend fun insertQuest(q: QuestLogEntity)
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertDay(d: DayLogEntity)
 
@@ -56,5 +70,5 @@ interface IronDao {
     }
 
     @Transaction
-    suspend fun wipe() { clearPlan(); clearProgression(); clearProfile(); clearPlayer(); clearCardio(); clearWeights(); clearQuests(); clearDays() }
+    suspend fun wipe() { clearPlan(); clearProgression(); clearProfile(); clearPlayer(); clearCardio(); clearWeights(); clearQuests(); clearDays(); clearFoodLog() }
 }

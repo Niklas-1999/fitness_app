@@ -68,6 +68,10 @@ private val TABS = listOf("HUD", "QUESTS", "FUEL", "PROFILE")
 /** Callbacks into the view model. */
 class MainActions(
     val complete: (TodayItem, Rating, Float?, Int) -> Unit,
+    val reroll: (TodayItem) -> Unit,
+    val fuel: dev.niklas.ironcore.ui.fuel.FuelActions,
+    val logFood: (dev.niklas.ironcore.data.FoodEntity, Float, Boolean) -> Unit,
+    val deleteFood: (Long) -> Unit,
     val restCheckIn: () -> Unit,
     val trainAnyway: (Boolean) -> Unit,
     val reinitialize: () -> Unit
@@ -80,9 +84,10 @@ fun MainScreen(s: AppState.Ready, result: QuestResult?, onResultShown: () -> Uni
     var showTheme by remember { mutableStateOf(false) }
     var running by remember { mutableStateOf<TodayItem?>(null) }
     var levelUp by remember { mutableStateOf<LevelUpInfo?>(null) }
+    var foodSheet by remember { mutableStateOf(false) }
     val pl = s.player
     val rank = Leveling.rank(pl.level)
-    androidx.activity.compose.BackHandler(enabled = (tab != 0 || showTheme) && running == null) {
+    androidx.activity.compose.BackHandler(enabled = (tab != 0 || showTheme) && running == null && !foodSheet) {
         if (showTheme) showTheme = false else { fx.glitch(); tab = 0 }
     }
     Box(Modifier.fillMaxSize()) {
@@ -96,22 +101,28 @@ fun MainScreen(s: AppState.Ready, result: QuestResult?, onResultShown: () -> Uni
             Box(Modifier.weight(1f)) {
                 when (tab) {
                     0 -> HudTab(s, onExecute = { fx.glitch(); running = it }, actions = actions)
-                    1 -> WeekTab(s)
-                    2 -> ModuleOffline("FUEL", Modifier)
+                    1 -> WeekTab(s) { fx.glitch(); running = it }
+                    2 -> dev.niklas.ironcore.ui.fuel.FuelTab(s, dev.niklas.ironcore.ui.fuel.FuelActions(
+                        openFoodSheet = { fx.glitch(); foodSheet = true },
+                        deleteLog = actions.fuel.deleteLog, addWater = actions.fuel.addWater, logWeight = actions.fuel.logWeight
+                    ))
                     else -> ProfileTab(s, actions.reinitialize) { fx.glitch(); running = TodayItem("debug_run", ItemKind.C25K, null, 0) }
                 }
             }
             BottomNav(tab) { tab = it }
         }
         AnimatedVisibility(showTheme, enter = fadeIn(), exit = fadeOut()) { ThemePickerOverlay { showTheme = false } }
+        if (foodSheet) dev.niklas.ironcore.ui.fuel.FoodSheet(s.foods, onLog = { f, g, save ->
+            foodSheet = false; fx.complete(); actions.logFood(f, g, save)
+        }, onDeleteFood = actions.deleteFood, onClose = { foodSheet = false })
         running?.let { item ->
             QuestRunner(item, s, onClose = { fx.glitch(); running = null }) { rating, load, minutes ->
                 running = null
                 if (item.key != "debug_run") actions.complete(item, rating, load, minutes)
             }
         }
-        if (running == null && levelUp == null) result?.let { r ->
-            RewardOverlay(r, if (r.stat == Stat.VIT && r.event == dev.niklas.ironcore.domain.ProgEvent.NONE && r.nextTarget == null && r.xp == Leveling.REST_XP) "RECOVERY LOGGED" else "QUEST CLEARED") {
+        if (running == null && levelUp == null && !foodSheet) result?.let { r ->
+            RewardOverlay(r, r.title) {
                 onResultShown()
                 if (r.leveledUp) {
                     val to = r.levelTo
@@ -144,9 +155,9 @@ private fun describe(slot: PlanSlotEntity, s: AppState.Ready): Pair<String, Stri
 private fun describe(item: TodayItem, s: AppState.Ready): Pair<String, String> = when (item.kind) {
     ItemKind.C25K -> C25K.run(s.c25kIndex).let { "RUN / WALK // ${it.label}" to it.summary }
     ItemKind.WALK -> "BRISK WALK" to "${item.minutes} MIN"
-    ItemKind.LADDER -> s.states[item.ladderId]?.let {
+    ItemKind.LADDER -> s.stateFor(item.ladderId!!).let {
         Format.variationName(it) to Format.target(it, s.setup.progContext, s.deloadWeek)
-    } ?: ("?" to "")
+    }
 }
 
 @Composable
@@ -167,7 +178,7 @@ private fun OperativePanel(s: AppState.Ready) {
                     CountUpText(pl.level, T.head(26.sp, Color.White, glow = 18f, weight = 900, spacing = .02.em))
                     Spacer(Modifier.weight(1f))
                     Txt("STREAK ", T.mono(11.sp, p.textDim))
-                    CountUpText(s.streak, T.head(18.sp, CyberPalette.AMBER, glow = 0f, weight = 700))
+                    CountUpText(s.streak, T.mono(24.sp, CyberPalette.AMBER, 0.sp, glow = CyberPalette.AMBER))
                 }
             }
         }
@@ -199,16 +210,20 @@ private fun HudTab(s: AppState.Ready, onExecute: (TodayItem) -> Unit, actions: M
             s.directive.forEach { item ->
                 val (name, target) = describe(item, s)
                 val log = done[item.key]
+                val rerolled = item.key == s.day?.rerollTo
                 QuestRow(
                     name, target,
-                    if (log != null) "+${log.xp} XP · ${log.rating}" else "",
-                    done = log != null
+                    if (log != null) "+${log.xp} XP · ${log.rating}" else if (rerolled) "// REROLLED" else "",
+                    done = log != null,
+                    secondary = if (s.canReroll && item.kind == ItemKind.LADDER && log == null) "REROLL" else null,
+                    onSecondary = { fx.glitch(); actions.reroll(item) }
                 ) { onExecute(item) }
             }
             Spacer(Modifier.height(6.dp))
             NeonBar(cleared / s.directive.size.toFloat(), height = 4.dp, color = CyberPalette.UP)
             Txt(
-                if (cleared == s.directive.size) "> DIRECTIVE CLEARED. RECOVER WELL." else "> ONE QUEST KEEPS THE STREAK ALIVE. FIRST QUESTS OF THE DAY GIVE THE MOST XP.",
+                if (cleared == s.directive.size) "> DIRECTIVE CLEARED. RECOVER WELL. MORE? QUESTS TAB → ARSENAL."
+                else "> ONE QUEST KEEPS THE STREAK ALIVE. FIRST QUESTS OF THE DAY GIVE THE MOST XP." + if (s.canReroll) " 1 REROLL AVAILABLE TODAY." else "",
                 T.mono(10.sp, if (cleared == s.directive.size) CyberPalette.UP else p.textMute, 0.sp), Modifier.padding(top = 8.dp)
             )
             if (!s.isTrainingDay && cleared == 0) {
@@ -256,9 +271,10 @@ private fun HudTab(s: AppState.Ready, onExecute: (TodayItem) -> Unit, actions: M
 }
 
 @Composable
-private fun WeekTab(s: AppState.Ready) {
+private fun WeekTab(s: AppState.Ready, onExecute: (TodayItem) -> Unit) {
     val p = Cyber.c
     Scroll {
+        Arsenal(s, onExecute)
         RecentOps(s)
         CyberPanel(Modifier.fillMaxWidth()) {
             PanelHeader("WK", "WEEK_PROTOCOL", "WEEK ${s.week}" + if (s.deloadWeek) " // DELOAD" else "")
@@ -280,6 +296,41 @@ private fun WeekTab(s: AppState.Ready) {
                     }
                 }
             }
+        }
+    }
+}
+
+/** Every exercise the equipment allows: free choice, normal XP + progression (daily diminishing still applies). */
+@Composable
+private fun Arsenal(s: AppState.Ready, onExecute: (TodayItem) -> Unit) {
+    val p = Cyber.c
+    var open by remember { mutableStateOf<dev.niklas.ironcore.domain.Pattern?>(null) }
+    val groups = dev.niklas.ironcore.domain.PlanGenerator.arsenal(s.setup.equipment).groupBy { it.pattern }
+    val names = mapOf(
+        dev.niklas.ironcore.domain.Pattern.PUSH to "PUSH // CHEST", dev.niklas.ironcore.domain.Pattern.PUSH_V to "PUSH // SHOULDERS",
+        dev.niklas.ironcore.domain.Pattern.PULL to "PULL // VERTICAL", dev.niklas.ironcore.domain.Pattern.ROW to "PULL // ROW",
+        dev.niklas.ironcore.domain.Pattern.SQUAT to "LEGS // SQUAT", dev.niklas.ironcore.domain.Pattern.LUNGE to "LEGS // LUNGE",
+        dev.niklas.ironcore.domain.Pattern.HINGE to "LEGS // HINGE", dev.niklas.ironcore.domain.Pattern.CORE to "CORE // FRONT",
+        dev.niklas.ironcore.domain.Pattern.CORE_SIDE to "CORE // SIDE", dev.niklas.ironcore.domain.Pattern.BALANCE to "BALANCE"
+    )
+    CyberPanel(Modifier.fillMaxWidth()) {
+        PanelHeader("AR", "ARSENAL", "FREE TRAINING")
+        Txt("Train anything, any day. Full XP for the first quests of the day, then diminishing (overtraining guard).", T.body(14.sp, p.textDim))
+        Spacer(Modifier.height(8.dp))
+        groups.forEach { (pattern, ladders) ->
+            val isOpen = open == pattern
+            OptionCard(names[pattern] ?: pattern.name, "${ladders.size} exercise" + (if (ladders.size > 1) "s" else "") + if (isOpen) "  ▲" else "  ▼",
+                isOpen, Modifier.padding(bottom = 6.dp)) { open = if (isOpen) null else pattern }
+            if (isOpen) ladders.forEach { l ->
+                val st = s.stateFor(l.id)
+                val done = s.doneToday[l.id]
+                QuestRow(Format.variationName(st), Format.target(st, s.setup.progContext, s.deloadWeek),
+                    if (done != null) "DONE TODAY · +${done.xp} XP" else if (l.id in s.states) "IN YOUR PROTOCOL" else "NEW // STARTS CALIBRATED",
+                    done = false, action = "EXECUTE") { onExecute(TodayItem(l.id, ItemKind.LADDER, l.id, 0)) }
+            }
+        }
+        OptionCard("CARDIO // WALK · RUN · CYCLE", "Log minutes of any moderate cardio (END, counts toward WHO 150 min)", false) {
+            onExecute(TodayItem("cardio", ItemKind.WALK, null, 30))
         }
     }
 }

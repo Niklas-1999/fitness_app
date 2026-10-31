@@ -6,7 +6,8 @@ Repo: https://github.com/Niklas-1999/fitness_app (public; clone over SSH: `git@g
 
 ## Current status (updated 2026-11-01)
 
-- **P0 visual system, P1 onboarding/plan and P2 quest engine are done and tested on the phone.**
+- **P0 visual system, P1 onboarding/plan, P2 quest engine and P3 nutrition are done and tested on the phone.**
+- **P3 contents (2026-11-01):** DB **v3** (`AutoMigration(2→3)`, tested on the phone): `food` (EU label values per 100 g), `food_log`, plus water / protein-goal / water-goal / reroll columns on `day_log`. FUEL tab (`ui/fuel/`): gauge, macros, EU reference-intake info, water, intake log, weight tracker with trend chart, metabolic calibration status. `FoodSheet`: my foods (search, edit, delete) → portion → log; new food editor in EU label order (kcal or kJ). `domain/Adaptive.kt`: adaptive TDEE (3 tests). Nutrition rewards (+VIT). **Daily reroll** and **ARSENAL** free training (see SPEC §4).
 - **P2 contents:**
   - DB **v2** via Room `AutoMigration(1→2)`: `quest_log`, `day_log`, attribute point columns. Tested: a v1 install upgraded on the phone with its data kept.
   - `domain/Rewards.kt`: XP (base × rating × daily diminishing × streak), attribute points, streak rules, rest times (ACSM). `PlanGenerator.extraSession`: recovery-aware TRAIN ANYWAY. 21 unit tests.
@@ -20,8 +21,8 @@ Repo: https://github.com/Niklas-1999/fitness_app (public; clone over SSH: `git@g
 
 ## Next steps
 
-1. **P3 nutrition:** FUEL tab, manual food log (per 100 g + grams eaten), saved foods, water, body-weight log, adaptive TDEE re-fit (`RESEARCH.md` §9), VIT points for hitting targets. DB v3 + migration.
-2. P4 EU label scanner (CameraX + offline OCR), P5 profile/achievements/cosmetics, P6 export/import, reminders, signed release APK.
+1. **P4 EU label scanner:** CameraX + offline OCR (check the Tesseract4Android licence first, bundle `deu`+`eng` traineddata), parse the 7 mandatory fields + fibre (`RESEARCH.md` §12), pre-fill `FoodEditor`.
+2. P5 profile/achievements/cosmetics, P6 export/import, reminders, signed release APK.
 3. Known small issues: walk quests don't log the user's actual pace; there's no history chart yet; the run timer relies on the screen staying on (no foreground service).
 
 ## Dev loop (how Niklas sees changes live)

@@ -110,7 +110,7 @@ private enum class Phase { SETUP, WORK, REST, RATE }
 private fun LadderRunner(item: TodayItem, s: AppState.Ready, onClose: () -> Unit, onComplete: (Rating, Float?, Int) -> Unit) {
     val p = Cyber.c
     val fx = LocalFx.current
-    val st = s.states.getValue(item.ladderId!!)
+    val st = s.stateFor(item.ladderId!!)
     val ladder = Exercises.ladder(st.ladderId)
     val v = ladder.steps[st.step]
     val sets = if (s.deloadWeek) Progression.deloadSets(st.sets) else st.sets

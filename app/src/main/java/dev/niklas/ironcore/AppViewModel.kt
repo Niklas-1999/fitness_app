@@ -7,6 +7,10 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import dev.niklas.ironcore.data.DayLogEntity
+import dev.niklas.ironcore.data.FoodEntity
+import dev.niklas.ironcore.data.FoodLogEntity
+import dev.niklas.ironcore.data.WeightLogEntity
+import dev.niklas.ironcore.domain.Adaptive
 import dev.niklas.ironcore.data.IronDb
 import dev.niklas.ironcore.data.PlanSlotEntity
 import dev.niklas.ironcore.data.PlayerEntity
@@ -55,7 +59,16 @@ sealed interface AppState {
         val weekActiveMin: Int,
         val directive: List<TodayItem>,
         val directiveType: SessionType?,
+        val canReroll: Boolean,
+        val foods: List<FoodEntity>,
+        val foodLog: List<FoodLogEntity>,           // last 28 days, newest first
+        val weights: List<WeightLogEntity>,         // last 60 days
+        val adaptive: Adaptive.Result,
+        val recentLadders: Set<String>,
     ) : AppState {
+        val foodToday get() = foodLog.filter { it.epochDay == todayEpoch }
+        val waterTodayMl get() = day?.waterMl ?: 0
+        fun stateFor(id: String): ProgState = states[id] ?: PlanGenerator.initialState(id, setup)
         val today: LocalDate get() = LocalDate.ofEpochDay(todayEpoch)
         val todayDow get() = today.dayOfWeek.value
         val isTrainingDay get() = slots.containsKey(todayDow)
@@ -79,12 +92,18 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
 
     private val core = combine(repo.profile, repo.player, repo.plan, repo.progression, repo.cardio) { a, b, c, d, e -> listOf(a, b, c, d, e) }
 
+    private data class Logs(val today: Long, val quests: List<QuestLogEntity>, val days: List<DayLogEntity>,
+                            val food: List<FoodLogEntity>, val weights: List<WeightLogEntity>)
+
     private val logs = todayFlow.flatMapLatest { today ->
-        combine(repo.questsSince(today - 13), repo.daysSince(today - 6)) { q, d -> Triple(today, q, d) }
+        combine(repo.questsSince(today - 13), repo.daysSince(today - 6), repo.foodLogSince(today - 27), repo.weightsSince(today - 59)) { q, d, f, w ->
+            Logs(today, q, d, f, w)
+        }
     }
 
     @Suppress("UNCHECKED_CAST")
-    val state: StateFlow<AppState> = combine(core, logs) { c, (today, quests, days) ->
+    val state: StateFlow<AppState> = combine(core, logs, repo.foods) { c, lg, foods ->
+        val today = lg.today; val quests = lg.quests; val days = lg.days; val foodLog = lg.food; val weights = lg.weights
         val prof = c[0] as dev.niklas.ironcore.data.ProfileEntity?
         val player = c[1] as PlayerEntity?
         if (prof == null || player == null) return@combine AppState.NeedsSetup
@@ -96,7 +115,7 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         val day = days.firstOrNull { it.epochDay == today }
         val dow = LocalDate.ofEpochDay(today).dayOfWeek.value
         val todaySlots = slots[dow]
-        val (directive, type) = when {
+        val (rawDirective, type) = when {
             todaySlots != null -> todaySlots.map { TodayItem(keyOf(it.kind, it.ladderId), it.kind, it.ladderId, it.minutes) } to todaySlots.first().sessionType
             day?.trainAnyway == true -> {
                 // recovery: ladders trained in the 2 days before today are excluded
@@ -106,10 +125,22 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
             }
             else -> emptyList<TodayItem>() to null
         }
+        // daily reroll replaces one ladder quest
+        val directive = rawDirective.map { if (it.key == day?.rerollFrom && day.rerollTo != null) TodayItem(day.rerollTo, ItemKind.LADDER, day.rerollTo, 0) else it }
+        val recentLadders = quests.filter { it.epochDay in (today - 2) until today && it.kind == ItemKind.LADDER }.map { it.itemKey }.toSet()
+        // nutrition: adaptive TDEE from food + weight logs, targets on the current trend weight
+        val weightMap = weights.associate { it.epochDay to it.kg }
+        val intake = foodLog.groupBy { it.epochDay }.mapValues { (_, l) -> l.sumOf { it.kcal.toDouble() }.toInt() }
+        val formula = Nutrition.targets(s.sex, s.age, s.weightKg, s.heightCm, s.activity, s.goal, s.intensity, s.targetWeightKg, s.pregnant)
+        val adaptive = Adaptive.estimate(formula.tdee, today, weightMap, intake)
+        val kgNow = adaptive.trendKg ?: s.weightKg
+        val nutrition = Nutrition.targets(s.sex, s.age, kgNow, s.heightCm, s.activity, s.goal, s.intensity, s.targetWeightKg, s.pregnant,
+            tdeeOverride = if (adaptive.confidence > 0f) adaptive.tdee else null)
         AppState.Ready(
             s, player, slots, prog.associate { it.ladderId to it.toState() }, cardio?.c25kIndex ?: 0, prof.planStartEpochDay,
-            Nutrition.targets(s.sex, s.age, s.weightKg, s.heightCm, s.activity, s.goal, s.intensity, s.targetWeightKg, s.pregnant),
-            today, day, quests, days.sumOf { it.activeMin }, directive, type
+            nutrition, today, day, quests, days.sumOf { it.activeMin }, directive, type,
+            canReroll = day?.rerollFrom == null, foods = foods, foodLog = foodLog, weights = weights, adaptive = adaptive,
+            recentLadders = recentLadders
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, AppState.Loading)
 
@@ -125,9 +156,30 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     fun complete(item: TodayItem, rating: Rating, loadKg: Float? = null, minutes: Int = 0) = viewModelScope.launch {
         val s = state.value as? AppState.Ready ?: return@launch
         lastResult = repo.completeQuest(
-            QuestDone(item.key, item.kind, item.ladderId, rating, loadKg, minutes),
+            QuestDone(item.key, item.kind, item.ladderId, rating, loadKg, minutes, item.ladderId?.let { s.stateFor(it) }),
             s.setup.progContext, s.deloadWeek, s.directive.map { it.key }
         )
+    }
+
+    fun logFood(food: FoodEntity, grams: Float, save: Boolean) = viewModelScope.launch {
+        val s = state.value as? AppState.Ready ?: return@launch
+        repo.logFood(food, grams, save, s.nutrition.proteinG)?.let { lastResult = it }
+    }
+    fun deleteFoodLog(id: Long) = viewModelScope.launch { repo.deleteFoodLog(id) }
+    fun deleteFood(id: Long) = viewModelScope.launch { repo.deleteFood(id) }
+    fun addWater(ml: Int) = viewModelScope.launch {
+        val s = state.value as? AppState.Ready ?: return@launch
+        repo.addWater(ml, (s.nutrition.waterL * 1000).toInt())?.let { lastResult = it }
+    }
+    fun logWeight(kg: Float) = viewModelScope.launch { repo.logWeight(kg) }
+
+    /** Daily reroll of one directive ladder quest. */
+    fun reroll(item: TodayItem) = viewModelScope.launch {
+        val s = state.value as? AppState.Ready ?: return@launch
+        if (!s.canReroll || item.kind != ItemKind.LADDER) return@launch
+        val to = PlanGenerator.rerollTarget(item.ladderId!!, s.setup.equipment, s.directive.mapNotNull { it.ladderId }.toSet(),
+            s.slots.values.flatten().mapNotNull { it.ladderId }, s.recentLadders) ?: return@launch
+        repo.reroll(item.key, to)
     }
 
     fun restCheckIn() = viewModelScope.launch { repo.restCheckIn()?.let { lastResult = it } }

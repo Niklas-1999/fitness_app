@@ -98,6 +98,14 @@ Status legend: ✅ checked against the primary document · ☑️ checked agains
 - → **App:** the label scanner looks for exactly these 7 fields (plus optional fibre) per 100 g, using German and English keywords (Brennwert/Energie, Fett, davon gesättigte Fettsäuren, Kohlenhydrate, davon Zucker, Eiweiß, Salz, Ballaststoffe). Logging asks for the grams eaten.
 - On-device OCR: **Tesseract4Android** (Tesseract 5, runs fully offline; `deu` + `eng` traineddata bundled in the app). The licence must be checked before adding it. Google ML Kit is excluded because it is a Google SDK.
 
+## 13. EU reference intakes (Reg. 1169/2011 Annex XIII, Part B) ☑️
+
+Adult reference intakes used for the "max" info lines: energy 8400 kJ / 2000 kcal, fat 70 g, **saturates 20 g**, carbohydrate 260 g, **sugars 90 g**, protein 50 g, **salt 6 g**.
+
+## 14. Adaptive TDEE [engineering]
+
+Following the critique of the static 7700 kcal/kg rule (§9), targets are not projected from the formula forever. Over a rolling 28-day window, energy balance is measured directly: observed TDEE = mean logged intake − weight slope × 7700 kcal/kg. Over short windows this approximation is reasonable. Errors: incomplete food logging biases TDEE low. The weight slope is a least-squares line, which filters water swings and has no lag. The result is blended with the formula by data coverage and clamped (60–160 %).
+
 ## Not used (insufficient evidence for a number)
 
 - **Predicted kg of muscle gained.** The rates vary too much between individuals and studies. The app shows projected *performance* (reps, loads, run times) and *body-weight* trends instead.

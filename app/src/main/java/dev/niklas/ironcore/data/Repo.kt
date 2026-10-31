@@ -28,7 +28,8 @@ data class QuestResult(
     val levelFrom: Int,
     val levelTo: Int,
     val statsBefore: List<Int>,
-    val statsAfter: List<Int>
+    val statsAfter: List<Int>,
+    val title: String = "QUEST CLEARED"
 ) {
     val leveledUp get() = levelTo > levelFrom
 }
@@ -40,10 +41,17 @@ data class QuestDone(
     val ladderId: String?,
     val rating: Rating,
     val loadKg: Float? = null,
-    val minutes: Int = 0
+    val minutes: Int = 0,
+    /** starting state for a ladder that is not in the plan yet (arsenal / reroll) */
+    val initial: dev.niklas.ironcore.domain.ProgState? = null
 )
 
 class Repo(private val db: IronDb) {
+    companion object {
+        const val PROTEIN_XP = 15
+        const val WATER_XP = 10
+    }
+
     private val dao = db.dao()
     val profile = dao.profile()
     val player = dao.player()
@@ -53,6 +61,9 @@ class Repo(private val db: IronDb) {
     val weights = dao.weights()
     fun questsSince(day: Long) = dao.questsSince(day)
     fun daysSince(day: Long) = dao.daysSince(day)
+    val foods = dao.foods()
+    fun foodLogSince(day: Long) = dao.foodLogSince(day)
+    fun weightsSince(day: Long) = dao.weightsSince(day)
 
     private fun today() = LocalDate.now().toEpochDay()
 
@@ -99,8 +110,7 @@ class Repo(private val db: IronDb) {
             var varName = when (done.kind) { ItemKind.C25K -> "RUN / WALK"; ItemKind.WALK -> "BRISK WALK"; else -> "" }
             when (done.kind) {
                 ItemKind.LADDER -> {
-                    val e = dao.progressionNow(done.ladderId!!)!!
-                    var st = e.toState()
+                    var st = dao.progressionNow(done.ladderId!!)?.toState() ?: done.initial!!
                     if (done.loadKg != null) st = st.copy(loadKg = done.loadKg)   // calibration / manual change
                     sets = if (deload) Progression.deloadSets(st.sets) else st.sets
                     target = st.target
@@ -182,7 +192,71 @@ class Repo(private val db: IronDb) {
         if (gained > 0) p = p.snapshotStats()
         dao.upsertPlayer(p)
         dao.upsertDay(day.copy(xp = day.xp + Leveling.REST_XP, restCheckIn = true))
-        QuestResult(Leveling.REST_XP, 0, Stat.VIT, statRaised, ProgEvent.NONE, null, streak, streakUp, pl.level, lvl, before, p.stats)
+        QuestResult(Leveling.REST_XP, 0, Stat.VIT, statRaised, ProgEvent.NONE, null, streak, streakUp, pl.level, lvl, before, p.stats, "RECOVERY LOGGED")
+    }
+
+    /** Non-quest bonus (nutrition / water goals): XP + 1 attribute point, no streak change. */
+    private suspend fun bonus(xp: Int, stat: Stat, title: String): QuestResult {
+        val pl = dao.playerNow()!!
+        val (v, pts) = Rewards.addPoints(pl.stats[stat.ordinal], pl.points[stat.ordinal], 1)
+        var p = pl.withStat(stat.ordinal, v, pts)
+        val (lvl, rest, gained) = Leveling.addXp(p.level, p.xp, xp)
+        val before = p.lastStats
+        p = p.copy(level = lvl, xp = rest, totalXp = p.totalXp + xp)
+        if (gained > 0) p = p.snapshotStats()
+        dao.upsertPlayer(p)
+        val today = today()
+        val day = dao.dayNow(today) ?: DayLogEntity(today)
+        dao.upsertDay(day.copy(xp = day.xp + xp))
+        val streak = Rewards.effectiveStreak(pl.lastActiveEpochDay, pl.streak, today)
+        return QuestResult(xp, 0, stat, v > pl.stats[stat.ordinal], ProgEvent.NONE, null, streak, false, pl.level, lvl, before, p.stats, title)
+    }
+
+    /**
+     * Logs [grams] of [food] (saved / updated in "my foods" when [save]). Returns a reward when the
+     * daily protein target is reached for the first time today (+VIT).
+     */
+    suspend fun logFood(food: FoodEntity, grams: Float, save: Boolean, proteinTarget: Int): QuestResult? = db.withTransaction {
+        val now = System.currentTimeMillis()
+        var id: Long? = null
+        if (save) {
+            val f = food.copy(portionG = grams, uses = food.uses + 1, lastUsed = now)
+            id = if (food.id == 0L) dao.insertFood(f) else { dao.updateFood(f); food.id }
+        }
+        val k = grams / 100f
+        val today = today()
+        dao.insertFoodLog(FoodLogEntity(
+            epochDay = today, foodId = id, name = food.name, grams = grams, kcal = food.kcal * k, fat = food.fat * k,
+            satFat = food.satFat * k, carbs = food.carbs * k, sugar = food.sugar * k, protein = food.protein * k,
+            salt = food.salt * k, fibre = (food.fibre ?: 0f) * k, timestamp = now
+        ))
+        val day = dao.dayNow(today) ?: DayLogEntity(today)
+        if (!day.proteinGoal && dao.proteinOn(today) >= proteinTarget) {
+            dao.upsertDay(day.copy(proteinGoal = true))
+            bonus(PROTEIN_XP, Stat.VIT, "PROTEIN TARGET MET")
+        } else null
+    }
+
+    suspend fun deleteFoodLog(id: Long) = dao.deleteFoodLog(id)
+    suspend fun deleteFood(id: Long) = dao.deleteFood(id)
+
+    /** Adds water; reward when the daily water target (EFSA) is reached the first time today. */
+    suspend fun addWater(ml: Int, targetMl: Int): QuestResult? = db.withTransaction {
+        val today = today()
+        val day = dao.dayNow(today) ?: DayLogEntity(today)
+        val total = (day.waterMl + ml).coerceAtLeast(0)
+        val hit = !day.waterGoal && total >= targetMl
+        dao.upsertDay(day.copy(waterMl = total, waterGoal = day.waterGoal || hit))
+        if (hit) bonus(WATER_XP, Stat.VIT, "HYDRATION MAXED") else null
+    }
+
+    suspend fun logWeight(kg: Float) = dao.upsertWeight(WeightLogEntity(today(), kg))
+
+    /** One reroll per day: replaces directive quest [fromKey] with ladder [toLadder]. */
+    suspend fun reroll(fromKey: String, toLadder: String) = db.withTransaction {
+        val today = today()
+        val day = dao.dayNow(today) ?: DayLogEntity(today)
+        if (day.rerollFrom == null) dao.upsertDay(day.copy(rerollFrom = fromKey, rerollTo = toLadder))
     }
 
     suspend fun setTrainAnyway(on: Boolean) {

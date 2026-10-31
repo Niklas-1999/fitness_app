@@ -205,6 +205,8 @@ fun QuestRow(
     meta: String,
     done: Boolean,
     action: String? = "EXECUTE",
+    secondary: String? = null,
+    onSecondary: () -> Unit = {},
     onExecute: () -> Unit = {}
 ) {
     val p = Cyber.c
@@ -231,7 +233,10 @@ fun QuestRow(
         }
         Box(contentAlignment = Alignment.Center) {
             if (!done) {
-                if (action != null) CyberButton(action, sound = false) { onExecute() }
+                Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    if (action != null) CyberButton(action, sound = false) { onExecute() }
+                    if (secondary != null) CyberButton(secondary, style = BtnStyle.OUTLINE) { onSecondary() }
+                }
             } else {
                 Txt(
                     "CLEARED",

@@ -54,10 +54,11 @@ object Nutrition {
 
     fun targets(
         sex: Sex, age: Int, kg: Float, cm: Float, activity: Activity,
-        goal: Goal, intensity: Intensity, targetKg: Float?, pregnant: Boolean
+        goal: Goal, intensity: Intensity, targetKg: Float?, pregnant: Boolean,
+        tdeeOverride: Int? = null
     ): NutritionTargets {
         val bmr = bmr(sex, kg, cm, age)
-        val tdee = bmr * activity.pal
+        val tdee = tdeeOverride?.toFloat() ?: (bmr * activity.pal)
         val dir = direction(goal, kg, targetKg, pregnant)
         var note = ""
         var weekly = 0f

@@ -59,6 +59,8 @@ Result: a **STATUS REPORT** screen showing starting stats, rank, the generated p
   - At the top of the rep range in two consecutive sessions → **next variation** (bodyweight) or **+2–10% load** (weights), then reset to the bottom of the range (ACSM rule, R§1).
   - HARD → keep the same target. FAILED → repeat; two FAILED in a row → −10% reps or load.
   - A **deload week** every ~6th week, or early when HARD/FAILED ratings pile up (R§5).
+- **Daily reroll:** once per day, one strength quest of the directive can be swapped. The replacement is another exercise of the same movement pattern your equipment allows (e.g. push-ups ↔ dumbbell press), otherwise a fresh exercise from the plan that wasn't trained in the last 48 h.
+- **ARSENAL (QUESTS tab):** free training. Every exercise the equipment allows, grouped by movement, plus "cardio minutes", can be executed any day with normal XP and progression. Exercises outside the plan start from a calibrated state. The daily diminishing XP still applies (overtraining guard).
 - **Non-training (rest) days** show a choice:
   - **REST PROTOCOL:** a one-tap check-in ("recovery logged"). It gives a small fixed XP (≈20, about a tenth of a training day) plus +1 VIT, and **keeps the streak alive**. Optional light extras for small XP: a walk (counts toward the WHO 150 min), stretching.
   - **TRAIN ANYWAY:** generates a **fitting extra session** that respects recovery. It trains muscle groups not hit in the last ~48 h, or does a light conditioning/mobility/core session. It never pushes progression on a muscle that is still recovering. Normal XP rules (incl. diminishing returns) apply.
@@ -101,7 +103,10 @@ Result: a **STATUS REPORT** screen showing starting stats, rank, the generated p
   - **Scan an EU nutrition label** with the camera → offline OCR → parses kcal, fat, saturates, carbs, sugars, protein, salt (+ fibre) per 100 g → "I ate **[ 200 ] g**" or "whole package (g)". The food is saved to "my foods" for one-tap re-logging. The user always confirms or edits the parsed values first.
   - Manual entry, recent foods, favourites, edit/delete entries.
 - **UI:** macro rings or bars that fill (cyberpunk gauges), with remaining kcal as a big counter. A daily VIT reward when targets are met.
-- **Body-weight log:** feeds the adaptive TDEE and the forecast.
+- **Water:** +250/+500 ml buttons against the EFSA target.
+- **Rewards:** reaching the protein target (+15 XP) and the water target (+10 XP) each give +1 VIT point once per day.
+- **Body-weight log:** feeds the adaptive TDEE and the forecast. The trend line is an exponential moving average.
+- **Adaptive TDEE:** after ≥14 days with ≥10 food-logged days and ≥4 weigh-ins, observed TDEE = average intake − (least-squares weight slope × 7700 kcal/kg). It is blended with the formula by coverage (full weight at 21 logged days) and clamped to 60–160 % of the formula. Targets then use the measured TDEE and the trend weight.
 
 ## 8. Data, privacy, platform
 
