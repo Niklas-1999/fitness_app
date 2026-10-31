@@ -1,4 +1,4 @@
-package dev.niklas.ironcore.ui.demo
+package dev.niklas.ironcore.ui.main
 
 import dev.niklas.ironcore.ui.components.Txt
 import androidx.compose.animation.AnimatedVisibility
@@ -83,166 +83,10 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-/* ---------- mock data for the P0 visual demo ---------- */
-
-private data class DemoQuest(val name: String, val target: String, val xp: Int, val stat: Int, val statName: String)
-
-private val QUESTS = listOf(
-    DemoQuest("KNEE PUSH-UP", "3 × 10", 40, 0, "STR"),
-    DemoQuest("BODYWEIGHT SQUAT", "3 × 15", 40, 0, "STR"),
-    DemoQuest("PLANK HOLD", "3 × 30 s", 30, 2, "AGI"),
-    DemoQuest("RUN / WALK // C25K W1", "8 × 1:00", 60, 1, "END"),
-)
-private val STAT_NAMES = listOf("STR", "END", "AGI", "VIT", "WIL")
-
-private val RANKS = listOf("GHOST" to 1, "RUNNER" to 10, "OPERATIVE" to 22, "ENFORCER" to 33, "VANGUARD" to 40, "APEX" to 46, "LEGEND" to 53)
-private fun rankIndex(level: Int) = RANKS.indexOfLast { level >= it.second }
-
-private fun xpToNext(level: Int) = maxOf(60, Math.round(84 * Math.pow(1.075, level.toDouble()) - 10).toInt())
-
-@Composable
-fun HudDemo() {
-    val p = Cyber.c
-    val fx = LocalFx.current
-    var level by remember { mutableIntStateOf(7) }
-    var xp by remember { mutableIntStateOf(120) }
-    val stats = remember { mutableStateListOf(14, 9, 7, 11, 12) }
-    val done = remember { mutableStateListOf(false, false, false, false) }
-    var streak by remember { mutableIntStateOf(12) }
-    var showTheme by remember { mutableStateOf(false) }
-    var levelUp by remember { mutableStateOf<LevelUpInfo?>(null) }
-    val statsAtLastLevel = remember { mutableStateListOf(12, 9, 6, 11, 11) }
-    var tab by remember { mutableIntStateOf(0) }
-    var popup by remember { mutableStateOf<Pair<Int, String>?>(null) }
-    var popupKey by remember { mutableIntStateOf(0) }
-
-    fun complete(i: Int) {
-        if (done[i]) return
-        val q = QUESTS[i]
-        done[i] = true
-        fx.complete()
-        stats[q.stat] = stats[q.stat] + 1
-        var nx = xp + q.xp
-        val allDone = done.all { it }
-        if (allDone) { nx += 80; stats[4] = stats[4] + 1 }
-        popup = (q.xp + if (allDone) 80 else 0) to "+1 ${q.statName}" + if (allDone) "  //  DIRECTIVE CLEAR" else ""
-        popupKey++
-        if (nx >= xpToNext(level)) {
-            nx -= xpToNext(level)
-            level++
-            val r = rankIndex(level)
-            val next = RANKS.getOrNull(r + 1)
-            levelUp = LevelUpInfo(
-                level - 1, level, STAT_NAMES, statsAtLastLevel.toList(), stats.toList(),
-                RANKS[r].first, next?.first,
-                if (next == null) 1f else (level - RANKS[r].second) / (next.second - RANKS[r].second).toFloat()
-            )
-            statsAtLastLevel.clear(); statsAtLastLevel.addAll(stats)
-        }
-        xp = nx
-        if (i == 0 && done.count { it } == 1) { streak++; fx.streak() }
-    }
-
-    Box(Modifier.fillMaxSize()) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.safeDrawing)
-        ) {
-            TopBar(onTheme = { fx.glitch(); showTheme = true })
-            Tape(level, streak, stats)
-            if (tab != 0) {
-                ModuleOffline(listOf("HUD", "QUESTS", "FUEL", "PROFILE")[tab], Modifier.weight(1f))
-            } else Column(
-                Modifier
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 12.dp, vertical = 4.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                // 01 operative status
-                CyberPanel(Modifier.fillMaxWidth(), delayMs = 50) {
-                    PanelHeader("01", "OPERATIVE_STATUS", "SYNCED", live = true)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        HexBadge("N", Modifier.size(62.dp, 70.dp))
-                        Spacer(Modifier.width(14.dp))
-                        Column(Modifier.weight(1f)) {
-                            Txt("NIKLAS", T.head(18.sp, Color.White, glow = 10f, weight = 900))
-                            Txt("RANK // ${RANKS[rankIndex(level)].first}", T.mono(11.sp, p.textDim))
-                            Spacer(Modifier.height(4.dp))
-                            Row(verticalAlignment = Alignment.Bottom) {
-                                Txt("LV ", T.mono(12.sp, p.textDim))
-                                CountUpText(level, T.head(26.sp, Color.White, glow = 18f, weight = 900, spacing = .02.em))
-                                Spacer(Modifier.weight(1f))
-                                Txt("STREAK ", T.mono(11.sp, p.textDim))
-                                CountUpText(streak, T.head(18.sp, CyberPalette.AMBER, glow = 0f, weight = 700))
-                            }
-                        }
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    Box {
-                        Column {
-                            Row {
-                                Txt("EXP", T.mono(10.sp, p.textMute))
-                                Spacer(Modifier.weight(1f))
-                                CountUpText(xp, T.mono(11.sp, Color.White)) { "$it / ${xpToNext(level)}" }
-                            }
-                            Spacer(Modifier.height(5.dp))
-                            NeonBar(xp / xpToNext(level).toFloat(), height = 8.dp, segments = 10, onTick = { fx.tick() })
-                        }
-                        XpPopup(popup, popupKey)
-                    }
-                }
-
-                // 02 daily directive
-                CyberPanel(Modifier.fillMaxWidth(), delayMs = 150) {
-                    PanelHeader("02", "DAILY_DIRECTIVE", "${done.count { it }}/${QUESTS.size} CLEARED")
-                    QUESTS.forEachIndexed { i, q -> QuestRow(q, done[i]) { complete(i) } }
-                    Spacer(Modifier.height(6.dp))
-                    NeonBar(done.count { it } / QUESTS.size.toFloat(), height = 4.dp, color = CyberPalette.UP)
-                    Spacer(Modifier.height(10.dp))
-                    CyberButton("RESET DEMO QUESTS", Modifier.fillMaxWidth(), BtnStyle.OUTLINE) {
-                        for (i in done.indices) done[i] = false
-                    }
-                }
-
-                // 03 stat matrix
-                CyberPanel(Modifier.fillMaxWidth(), delayMs = 250) {
-                    PanelHeader("03", "STAT_MATRIX", "5 ATTRIBUTES")
-                    StatRadar(stats.map { it / 25f }, STAT_NAMES, Modifier.fillMaxWidth().height(230.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        STAT_NAMES.forEachIndexed { i, n ->
-                            StatBox(n, stats[i].toString(), Modifier.weight(1f))
-                        }
-                    }
-                }
-
-                // 04 fuel gauge
-                CyberPanel(Modifier.fillMaxWidth(), delayMs = 350) {
-                    PanelHeader("04", "FUEL_GAUGE", "TODAY")
-                    FuelGauge(1640, 2450)
-                    Spacer(Modifier.height(12.dp))
-                    MacroRow("PROTEIN", 96, 128, "g")
-                    MacroRow("CARBS", 180, 290, "g")
-                    MacroRow("FAT", 52, 82, "g")
-                    MacroRow("WATER", 1.4f, 2.5f, "L")
-                }
-                Spacer(Modifier.height(8.dp))
-            }
-            BottomNav(tab) { tab = it }
-        }
-
-        AnimatedVisibility(showTheme, enter = fadeIn(), exit = fadeOut()) {
-            ThemePickerOverlay { showTheme = false }
-        }
-        levelUp?.let { info -> LevelUpTerminal(info) { levelUp = null } }
-    }
-}
-
 /* ---------- top bar ---------- */
 
 @Composable
-private fun TopBar(onTheme: () -> Unit) {
+fun TopBar(onTheme: () -> Unit) {
     val p = Cyber.c
     val now by produceState(Date()) { while (true) { value = Date(); delay(1000) } }
     val scan by rememberInfiniteTransition(label = "tb").animateFloat(.3f, 1f, infiniteRepeatable(tween(2000), RepeatMode.Reverse), label = "s")
@@ -276,7 +120,7 @@ private fun TopBar(onTheme: () -> Unit) {
 }
 
 @Composable
-private fun ThemeButton(onClick: () -> Unit) {
+fun ThemeButton(onClick: () -> Unit) {
     val p = Cyber.c
     val rot by rememberInfiniteTransition(label = "tbn").animateFloat(0f, 360f, infiniteRepeatable(tween(3000, easing = LinearEasing)), label = "r")
     Canvas(
@@ -298,7 +142,7 @@ private fun ThemeButton(onClick: () -> Unit) {
 
 /** Hexagon emblem like `.hex`, with a pulsing glow. */
 @Composable
-private fun HexBadge(letter: String, modifier: Modifier, small: Boolean = false) {
+fun HexBadge(letter: String, modifier: Modifier, small: Boolean = false) {
     val p = Cyber.c
     val pulse by rememberInfiniteTransition(label = "hex").animateFloat(0f, 1f, infiniteRepeatable(tween(1500), RepeatMode.Reverse), label = "p")
     val hex = remember {
@@ -322,10 +166,8 @@ private fun HexBadge(letter: String, modifier: Modifier, small: Boolean = false)
 
 /** Scrolling ticker tape. */
 @Composable
-private fun Tape(level: Int, streak: Int, stats: List<Int>) {
+fun Tape(items: List<String>) {
     val p = Cyber.c
-    val items = listOf("LVL $level", "STREAK $streak ▲", "NEXT DIRECTIVE 18:00") +
-        STAT_NAMES.mapIndexed { i, n -> "$n ${stats[i]}" } + listOf("WEEK 3 // PHASE: BUILD", "DELOAD IN 3 WK")
     val text = items.joinToString("   ◆   ")
     val shift by rememberInfiniteTransition(label = "tape").animateFloat(0f, 1f, infiniteRepeatable(tween(30000, easing = LinearEasing)), label = "x")
     var copyW by remember { mutableIntStateOf(0) }
@@ -357,7 +199,14 @@ private fun Tape(level: Int, streak: Int, stats: List<Int>) {
 /* ---------- quests ---------- */
 
 @Composable
-private fun QuestRow(q: DemoQuest, done: Boolean, onExecute: () -> Unit) {
+fun QuestRow(
+    name: String,
+    target: String,
+    meta: String,
+    done: Boolean,
+    action: String? = "EXECUTE",
+    onExecute: () -> Unit = {}
+) {
     val p = Cyber.c
     val stamp = remember { Animatable(if (done) 1f else 0f) }
     LaunchedEffect(done) {
@@ -374,16 +223,15 @@ private fun QuestRow(q: DemoQuest, done: Boolean, onExecute: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f)) {
-            Txt(q.name, T.body(16.sp, if (done) p.textMute else Color.White, androidx.compose.ui.text.font.FontWeight.Bold))
-            Row {
-                Txt(q.target, T.mono(13.sp, if (done) p.textMute else p.accent, glow = if (done) null else p.acc(.5f)))
-                Spacer(Modifier.width(10.dp))
-                Txt("+${q.xp} XP · ${q.statName}+1", T.mono(11.sp, p.textMute))
+            Txt(name, T.body(16.sp, if (done) p.textMute else Color.White, androidx.compose.ui.text.font.FontWeight.Bold))
+            Column {
+                Txt(target, T.mono(13.sp, if (done) p.textMute else p.accent, glow = if (done) null else p.acc(.5f)))
+                if (meta.isNotEmpty()) Txt(meta, T.mono(10.sp, p.textMute))
             }
         }
         Box(contentAlignment = Alignment.Center) {
             if (!done) {
-                CyberButton("EXECUTE", sound = false) { onExecute() }
+                if (action != null) CyberButton(action, sound = false) { onExecute() }
             } else {
                 Txt(
                     "CLEARED",
@@ -400,7 +248,7 @@ private fun QuestRow(q: DemoQuest, done: Boolean, onExecute: () -> Unit) {
 
 /** "+40 XP" floating up from the XP bar. */
 @Composable
-private fun XpPopup(popup: Pair<Int, String>?, key: Int) {
+fun XpPopup(popup: Pair<Int, String>?, key: Int) {
     if (popup == null) return
     val a = remember(key) { Animatable(0f) }
     LaunchedEffect(key) { a.animateTo(1f, tween(1600, easing = FastOutSlowInEasing)) }
@@ -420,7 +268,7 @@ private fun XpPopup(popup: Pair<Int, String>?, key: Int) {
 /* ---------- placeholder modules ---------- */
 
 @Composable
-private fun ModuleOffline(name: String, modifier: Modifier) {
+fun ModuleOffline(name: String, modifier: Modifier) {
     val p = Cyber.c
     val phase = mapOf("QUESTS" to "P2", "FUEL" to "P3 / P4", "PROFILE" to "P5")[name]
     Box(modifier.fillMaxWidth().padding(12.dp), contentAlignment = Alignment.TopCenter) {
@@ -436,7 +284,7 @@ private fun ModuleOffline(name: String, modifier: Modifier) {
 /* ---------- fuel ---------- */
 
 @Composable
-private fun FuelGauge(kcal: Int, target: Int) {
+fun FuelGauge(kcal: Int, target: Int) {
     val p = Cyber.c
     val anim = remember { Animatable(0f) }
     LaunchedEffect(kcal) { anim.animateTo(kcal / target.toFloat(), tween(2000, easing = FastOutSlowInEasing)) }
@@ -466,7 +314,7 @@ private fun FuelGauge(kcal: Int, target: Int) {
 }
 
 @Composable
-private fun MacroRow(name: String, v: Number, t: Number, unit: String) {
+fun MacroRow(name: String, v: Number, t: Number, unit: String) {
     val p = Cyber.c
     Column(Modifier.padding(vertical = 4.dp)) {
         Row {
@@ -482,7 +330,7 @@ private fun MacroRow(name: String, v: Number, t: Number, unit: String) {
 /* ---------- bottom nav ---------- */
 
 @Composable
-private fun BottomNav(sel: Int, onSelect: (Int) -> Unit) {
+fun BottomNav(sel: Int, onSelect: (Int) -> Unit) {
     val p = Cyber.c
     val fx = LocalFx.current
     val tabs = listOf("HUD", "QUESTS", "FUEL", "PROFILE")

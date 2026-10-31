@@ -1,0 +1,459 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "287a11935c27f54705e8bfb8e0a4b9a1",
+    "entities": [
+      {
+        "tableName": "profile",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `handle` TEXT NOT NULL, `age` INTEGER NOT NULL, `sex` TEXT NOT NULL, `heightCm` REAL NOT NULL, `weightKg` REAL NOT NULL, `activity` TEXT NOT NULL, `experience` TEXT NOT NULL, `healthFlags` INTEGER NOT NULL, `pregnant` INTEGER NOT NULL, `goal` TEXT NOT NULL, `goal2` TEXT, `targetWeightKg` REAL, `intensity` TEXT NOT NULL, `sessionMin` INTEGER NOT NULL, `trainingDaysMask` INTEGER NOT NULL, `equipmentMask` INTEGER NOT NULL, `dumbbellMaxKg` REAL, `calPushStep` INTEGER NOT NULL, `calPushReps` INTEGER NOT NULL, `calSquatReps` INTEGER NOT NULL, `calPlankSec` INTEGER NOT NULL, `calPullReps` INTEGER, `planStartEpochDay` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "handle",
+            "columnName": "handle",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "age",
+            "columnName": "age",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sex",
+            "columnName": "sex",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "heightCm",
+            "columnName": "heightCm",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "weightKg",
+            "columnName": "weightKg",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "activity",
+            "columnName": "activity",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "experience",
+            "columnName": "experience",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "healthFlags",
+            "columnName": "healthFlags",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "pregnant",
+            "columnName": "pregnant",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "goal",
+            "columnName": "goal",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "goal2",
+            "columnName": "goal2",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "targetWeightKg",
+            "columnName": "targetWeightKg",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "intensity",
+            "columnName": "intensity",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sessionMin",
+            "columnName": "sessionMin",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "trainingDaysMask",
+            "columnName": "trainingDaysMask",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "equipmentMask",
+            "columnName": "equipmentMask",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dumbbellMaxKg",
+            "columnName": "dumbbellMaxKg",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "calPushStep",
+            "columnName": "calPushStep",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "calPushReps",
+            "columnName": "calPushReps",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "calSquatReps",
+            "columnName": "calSquatReps",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "calPlankSec",
+            "columnName": "calPlankSec",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "calPullReps",
+            "columnName": "calPullReps",
+            "affinity": "INTEGER",
+            "notNull": false
+          },
+          {
+            "fieldPath": "planStartEpochDay",
+            "columnName": "planStartEpochDay",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAt",
+            "columnName": "createdAt",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "player",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `level` INTEGER NOT NULL, `xp` INTEGER NOT NULL, `totalXp` INTEGER NOT NULL, `str` INTEGER NOT NULL, `end` INTEGER NOT NULL, `agi` INTEGER NOT NULL, `vit` INTEGER NOT NULL, `wil` INTEGER NOT NULL, `lastStr` INTEGER NOT NULL, `lastEnd` INTEGER NOT NULL, `lastAgi` INTEGER NOT NULL, `lastVit` INTEGER NOT NULL, `lastWil` INTEGER NOT NULL, `streak` INTEGER NOT NULL, `bestStreak` INTEGER NOT NULL, `lastActiveEpochDay` INTEGER, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "level",
+            "columnName": "level",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "xp",
+            "columnName": "xp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "totalXp",
+            "columnName": "totalXp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "str",
+            "columnName": "str",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "end",
+            "columnName": "end",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "agi",
+            "columnName": "agi",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "vit",
+            "columnName": "vit",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wil",
+            "columnName": "wil",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastStr",
+            "columnName": "lastStr",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastEnd",
+            "columnName": "lastEnd",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastAgi",
+            "columnName": "lastAgi",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastVit",
+            "columnName": "lastVit",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastWil",
+            "columnName": "lastWil",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "streak",
+            "columnName": "streak",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bestStreak",
+            "columnName": "bestStreak",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "lastActiveEpochDay",
+            "columnName": "lastActiveEpochDay",
+            "affinity": "INTEGER",
+            "notNull": false
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "progression",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`ladderId` TEXT NOT NULL, `step` INTEGER NOT NULL, `sets` INTEGER NOT NULL, `target` INTEGER NOT NULL, `loadKg` REAL, `topHits` INTEGER NOT NULL, `fails` INTEGER NOT NULL, `sessions` INTEGER NOT NULL, PRIMARY KEY(`ladderId`))",
+        "fields": [
+          {
+            "fieldPath": "ladderId",
+            "columnName": "ladderId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "step",
+            "columnName": "step",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sets",
+            "columnName": "sets",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "target",
+            "columnName": "target",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "loadKg",
+            "columnName": "loadKg",
+            "affinity": "REAL",
+            "notNull": false
+          },
+          {
+            "fieldPath": "topHits",
+            "columnName": "topHits",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "fails",
+            "columnName": "fails",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sessions",
+            "columnName": "sessions",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "ladderId"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "plan_slot",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`dayOfWeek` INTEGER NOT NULL, `ord` INTEGER NOT NULL, `sessionType` TEXT NOT NULL, `kind` TEXT NOT NULL, `ladderId` TEXT, `minutes` INTEGER NOT NULL, PRIMARY KEY(`dayOfWeek`, `ord`))",
+        "fields": [
+          {
+            "fieldPath": "dayOfWeek",
+            "columnName": "dayOfWeek",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ord",
+            "columnName": "ord",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "sessionType",
+            "columnName": "sessionType",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kind",
+            "columnName": "kind",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ladderId",
+            "columnName": "ladderId",
+            "affinity": "TEXT",
+            "notNull": false
+          },
+          {
+            "fieldPath": "minutes",
+            "columnName": "minutes",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "dayOfWeek",
+            "ord"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "cardio",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER NOT NULL, `c25kIndex` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "c25kIndex",
+            "columnName": "c25kIndex",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      },
+      {
+        "tableName": "weight_log",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`epochDay` INTEGER NOT NULL, `kg` REAL NOT NULL, PRIMARY KEY(`epochDay`))",
+        "fields": [
+          {
+            "fieldPath": "epochDay",
+            "columnName": "epochDay",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "kg",
+            "columnName": "kg",
+            "affinity": "REAL",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "epochDay"
+          ]
+        },
+        "indices": [],
+        "foreignKeys": []
+      }
+    ],
+    "views": [],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '287a11935c27f54705e8bfb8e0a4b9a1')"
+    ]
+  }
+}

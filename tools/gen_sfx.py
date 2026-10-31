@@ -94,6 +94,9 @@ def mix(*parts):
 
 
 def save(name, buf, gain=.9):
+    for ext in ('.ogg', '.mp3'):  # a custom import replaces the default; regenerate wins
+        try: os.remove(os.path.join(OUT, name + ext))
+        except FileNotFoundError: pass
     peak = max(1e-9, max(abs(v) for v in buf))
     with wave.open(os.path.join(OUT, name + '.wav'), 'w') as w:
         w.setnchannels(1); w.setsampwidth(2); w.setframerate(SR)

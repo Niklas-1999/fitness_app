@@ -4,20 +4,22 @@ You are starting a fresh session. This file has everything decided so far and is
 
 Repo: https://github.com/Niklas-1999/fitness_app (public; clone over SSH: `git@github.com:Niklas-1999/fitness_app.git`).
 
-## Current status (updated 2026-10-31, late evening)
+## Current status (updated 2026-10-31, ~midnight)
 
-- **Done:**
-  - Toolchain and live dev loop (`./dev.sh`, scrcpy mirror, ~20 s edit→phone).
-  - **Research** for all training/nutrition rules, with sources → `RESEARCH.md`. Use only numbers from there.
-  - **`SPEC.md` approved** (see its decisions log). It contains Niklas's product vision: onboarding questionnaire → generated plan with projections → daily quests (RPG) → XP/levels/stats/streak, rest-day mechanic, nutrition targets + EU label scanner, profile/achievements/cosmetics. Levelling curve and anti-overtraining XP are simulated in `tools/level_curve.py`.
-  - **P0 visual system built and running on the phone:** theme engine (one accent → whole palette, 12 presets + custom picker, persisted), Cryptobro-style panels/frames/fonts, animated backdrop (grid, sun, data rain, dust, glitch bars), scanlines/vignette/sweep, boot sequence, glitch text, animated XP/neon bars, stat radar, fuel gauge, terminal-style level-up (`LevelUp.kt`), hacker-style synthesized SFX (`tools/gen_sfx.py`) + haptics. The current screen is a **demo HUD with mock data** (`ui/demo/HudDemo.kt`). Its bottom tabs switch to "module offline" placeholders. Niklas's feedback on it: sounds and level-up should be hacker-style, not cheerful (done).
-- **Visual reference:** Niklas's dashboard https://github.com/Niklas-1999/Cryptobro (live: https://niklas-1999.github.io/Cryptobro/). He wants **exactly that over-the-top cyberpunk style** everywhere. No rounded "AI-style" minimalism.
-- **App name: IRONCORE**, package `dev.niklas.ironcore` (debug build: `dev.niklas.ironcore.debug`). Never change the package after the first release install.
+- **P0 visual system:** done (see `SPEC.md` §1).
+- **P1 done and tested on the phone:**
+  - Room DB v1 (`data/`), schema exported to `app/schemas/`. Future versions need real migrations.
+  - Domain in plain Kotlin (`domain/`): enums, exercise library with progression ladders, ACSM double progression, Mifflin/EFSA nutrition, plan generator, NHS C25K table, forecasts, levelling/ranks. **17 JVM unit tests** (`./gradlew testDebugUnitTest`, needs `JAVA_HOME=~/android-tools/jdk21`).
+  - Onboarding "SYSTEM INITIALIZATION" (14 steps incl. PAR-Q+-style health check, calibration scan with stopwatch) → compiler animation → STATUS REPORT (stats, week protocol, fuel targets, forecast) → HUD with real data. The WEEK tab shows the protocol. PROFILE tab: sound/haptics toggles and RE-INITIALIZE (wipes the DB).
+  - The system back gesture is handled (setup goes a step back; tabs go back to the HUD).
+- **App name IRONCORE**, package `dev.niklas.ironcore` (debug: `.debug`). Never change it after the first release install.
+- **Custom sounds:** Niklas may supply his own sounds. Drop them in `sounds/<role>.mp3` and run `tools/import_sfx.sh` (see `sounds/README.md`).
+- **Testing helpers:** `tools/phone.sh` (tap by text, fill fields, screenshots via adb) is used to drive the app on the phone.
 
 ## Next steps
 
-1. Build **P1**: Room DB (with migrations) + onboarding questionnaire + calibration test + plan generator + status report/forecast.
-2. Then continue P2–P6 in the order given in `SPEC.md` §10.
+1. **P2 quest engine:** execute quests (set-by-set flow with rest timer), rate EASY/SOLID/HARD/FAILED → `Progression.apply`, load calibration for LOAD exercises in the first session, XP with the daily diminishing multiplier, stat gains, streak, terminal level-up (`LevelUpTerminal`), REST PROTOCOL and TRAIN ANYWAY on rest days, C25K run screen with interval timer, quest history table (needs DB v2 + migration).
+2. P3 nutrition logging, then P4–P6 as in `SPEC.md` §10.
 
 ## Dev loop (how Niklas sees changes live)
 

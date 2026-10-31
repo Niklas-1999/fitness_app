@@ -6,24 +6,32 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
+import androidx.activity.viewModels
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import dev.niklas.ironcore.audio.Fx
 import dev.niklas.ironcore.audio.LocalFx
 import dev.niklas.ironcore.ui.boot.BootScreen
-import dev.niklas.ironcore.ui.demo.HudDemo
 import dev.niklas.ironcore.ui.fx.CyberBackdrop
+import dev.niklas.ironcore.ui.main.MainScreen
+import dev.niklas.ironcore.ui.onboarding.OnboardingFlow
+import dev.niklas.ironcore.ui.onboarding.OnboardingVM
 import dev.niklas.ironcore.ui.theme.CyberTheme
 import dev.niklas.ironcore.ui.theme.ThemeState
 
 class MainActivity : ComponentActivity() {
     private lateinit var fx: Fx
+    private val app: AppViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,9 +45,23 @@ class MainActivity : ComponentActivity() {
             CompositionLocalProvider(LocalFx provides fx) {
                 CyberTheme(theme) {
                     var booted by rememberSaveable { mutableStateOf(false) }
+                    val state by app.state.collectAsStateWithLifecycle()
                     CyberBackdrop {
-                        AnimatedVisibility(booted, enter = fadeIn(tween(600))) { HudDemo() }
-                        if (!booted) BootScreen("IRONCORE", "NEURAL TRAINING TERMINAL // BUILD 0.1") { booted = true }
+                        if (!booted) BootScreen("IRONCORE", "NEURAL TRAINING TERMINAL // BUILD 0.2") { booted = true }
+                        else AnimatedContent(
+                            state::class,
+                            transitionSpec = { fadeIn(tween(600)) togetherWith fadeOut(tween(300)) },
+                            label = "root"
+                        ) { kind ->
+                            when (kind) {
+                                AppState.NeedsSetup::class -> {
+                                    val vm: OnboardingVM = viewModel()
+                                    OnboardingFlow(vm) { setup, plan -> app.initialize(setup, plan) }
+                                }
+                                AppState.Ready::class -> (state as? AppState.Ready)?.let { MainScreen(it) { app.wipe() } }
+                                else -> {}
+                            }
+                        }
                     }
                 }
             }
