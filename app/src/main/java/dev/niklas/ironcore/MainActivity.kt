@@ -23,6 +23,7 @@ import dev.niklas.ironcore.audio.Fx
 import dev.niklas.ironcore.audio.LocalFx
 import dev.niklas.ironcore.ui.boot.BootScreen
 import dev.niklas.ironcore.ui.fx.CyberBackdrop
+import dev.niklas.ironcore.ui.main.MainActions
 import dev.niklas.ironcore.ui.main.MainScreen
 import dev.niklas.ironcore.ui.onboarding.OnboardingFlow
 import dev.niklas.ironcore.ui.onboarding.OnboardingVM
@@ -58,7 +59,14 @@ class MainActivity : ComponentActivity() {
                                     val vm: OnboardingVM = viewModel()
                                     OnboardingFlow(vm) { setup, plan -> app.initialize(setup, plan) }
                                 }
-                                AppState.Ready::class -> (state as? AppState.Ready)?.let { MainScreen(it) { app.wipe() } }
+                                AppState.Ready::class -> (state as? AppState.Ready)?.let {
+                                    MainScreen(it, app.lastResult, { app.lastResult = null }, MainActions(
+                                        complete = { item, r, load, min -> app.complete(item, r, load, min) },
+                                        restCheckIn = { app.restCheckIn() },
+                                        trainAnyway = { on -> app.trainAnyway(on) },
+                                        reinitialize = { app.wipe() }
+                                    ))
+                                }
                                 else -> {}
                             }
                         }
@@ -66,6 +74,11 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        app.refreshDay()   // day rollover while the app was in the background
     }
 
     override fun onDestroy() {

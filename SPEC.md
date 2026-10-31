@@ -72,6 +72,7 @@ Result: a **STATUS REPORT** screen showing starting stats, rank, the generated p
 ## 6. RPG layer
 
 - **XP per quest:** base ≈30 (scaled by quest size/difficulty) × a **daily diminishing multiplier** for the k-th quest of the day: 1.0, 1.0, 1.0, 0.9, 0.8, 0.6, 0.3, 0.15, then 0.05 for every quest after that. Doing more than a normal session barely pays, which **discourages overtraining** (5 quests ≈ 181 XP, 8 ≈ 212, 12 ≈ 218).
+- Base XP per quest: strength/hold = 20 + 5 × sets, C25K run = 45, walk = minutes (10–45). Rating multiplier: EASY/SOLID ×1.0, HARD ×1.1, FAILED ×0.5 (showing up counts).
 - **DIRECTIVE CLEAR** bonus +40 XP once per day. Streak multiplier +2% per streak day, capped at +30%.
 - **Levels (no max level):** XP from L to L+1 = `max(60, round(84 · 1.075^L − 10))`. Simulated in `tools/level_curve.py`. With 4 sessions/week:
 
@@ -82,7 +83,7 @@ Result: a **STATUS REPORT** screen showing starting stats, rank, the generated p
   | Month 1 | ~21 | about 1 every other training day around L20 |
   | Month 2–3 | ~29–34 | about 1 per week around L30 |
   | Year 1 | ~52 | exponential: L40 ≈ 10 days, L50 ≈ 3 weeks, L75+ months |
-- **Stats** (5, shown as a pentagon radar plus bars):
+- **Stats** (5, shown as a pentagon radar plus bars). Each completed quest gives +1 data point to its attribute (none on FAILED). An attribute rises by 1 after `max(2, value/4)` points, so early gains come quickly and later ones slowly. WIL gets a point for the first activity of the day and for a directive clear, and VIT for the rest check-in (and nutrition targets from P3):
   - **STR** strength: resistance quests
   - **END** endurance: cardio, high-rep and timed quests
   - **AGI** agility: mobility, core and balance quests

@@ -4,22 +4,25 @@ You are starting a fresh session. This file has everything decided so far and is
 
 Repo: https://github.com/Niklas-1999/fitness_app (public; clone over SSH: `git@github.com:Niklas-1999/fitness_app.git`).
 
-## Current status (updated 2026-10-31, ~midnight)
+## Current status (updated 2026-11-01)
 
-- **P0 visual system:** done (see `SPEC.md` §1).
-- **P1 done and tested on the phone:**
-  - Room DB v1 (`data/`), schema exported to `app/schemas/`. Future versions need real migrations.
-  - Domain in plain Kotlin (`domain/`): enums, exercise library with progression ladders, ACSM double progression, Mifflin/EFSA nutrition, plan generator, NHS C25K table, forecasts, levelling/ranks. **17 JVM unit tests** (`./gradlew testDebugUnitTest`, needs `JAVA_HOME=~/android-tools/jdk21`).
-  - Onboarding "SYSTEM INITIALIZATION" (14 steps incl. PAR-Q+-style health check, calibration scan with stopwatch) → compiler animation → STATUS REPORT (stats, week protocol, fuel targets, forecast) → HUD with real data. The WEEK tab shows the protocol. PROFILE tab: sound/haptics toggles and RE-INITIALIZE (wipes the DB).
-  - The system back gesture is handled (setup goes a step back; tabs go back to the HUD).
+- **P0 visual system, P1 onboarding/plan and P2 quest engine are done and tested on the phone.**
+- **P2 contents:**
+  - DB **v2** via Room `AutoMigration(1→2)`: `quest_log`, `day_log`, attribute point columns. Tested: a v1 install upgraded on the phone with its data kept.
+  - `domain/Rewards.kt`: XP (base × rating × daily diminishing × streak), attribute points, streak rules, rest times (ACSM). `PlanGenerator.extraSession`: recovery-aware TRAIN ANYWAY. 21 unit tests.
+  - `data/Repo.completeQuest`: one transaction that applies progression (no progression in deload weeks), XP, attribute points, streak, directive-clear bonus and level-up snapshot.
+  - UI `ui/quest/`: `QuestRunner` (load calibration, set-by-set flow, rest timer, hold timer, "log all sets", effort rating), `RunTimer` (NHS C25K phases, vibration at phase changes, screen stays on), `WalkLogger`, `RewardOverlay`. Then the terminal level-up.
+  - HUD: daily directive with EXECUTE/CLEARED, rest day with REST PROTOCOL / TRAIN ANYWAY (bonus ops), weekly active minutes (WHO 150). WEEK tab: OPS_LOG (14 days) + protocol. PROFILE: a debug-only "test run timer" (only in the `.debug` build).
+- The phone currently holds a **test profile ("RUNNER")**. Niklas should RE-INITIALIZE with his real data.
 - **App name IRONCORE**, package `dev.niklas.ironcore` (debug: `.debug`). Never change it after the first release install.
-- **Custom sounds:** Niklas may supply his own sounds. Drop them in `sounds/<role>.mp3` and run `tools/import_sfx.sh` (see `sounds/README.md`).
-- **Testing helpers:** `tools/phone.sh` (tap by text, fill fields, screenshots via adb) is used to drive the app on the phone.
+- **Custom sounds:** `sounds/<role>.mp3` + `tools/import_sfx.sh` (see `sounds/README.md`).
+- **Testing helpers:** `tools/phone.sh` (tap by text, `edit N value`, shot, texts) drives the app over adb.
 
 ## Next steps
 
-1. **P2 quest engine:** execute quests (set-by-set flow with rest timer), rate EASY/SOLID/HARD/FAILED → `Progression.apply`, load calibration for LOAD exercises in the first session, XP with the daily diminishing multiplier, stat gains, streak, terminal level-up (`LevelUpTerminal`), REST PROTOCOL and TRAIN ANYWAY on rest days, C25K run screen with interval timer, quest history table (needs DB v2 + migration).
-2. P3 nutrition logging, then P4–P6 as in `SPEC.md` §10.
+1. **P3 nutrition:** FUEL tab, manual food log (per 100 g + grams eaten), saved foods, water, body-weight log, adaptive TDEE re-fit (`RESEARCH.md` §9), VIT points for hitting targets. DB v3 + migration.
+2. P4 EU label scanner (CameraX + offline OCR), P5 profile/achievements/cosmetics, P6 export/import, reminders, signed release APK.
+3. Known small issues: walk quests don't log the user's actual pace; there's no history chart yet; the run timer relies on the screen staying on (no foreground service).
 
 ## Dev loop (how Niklas sees changes live)
 

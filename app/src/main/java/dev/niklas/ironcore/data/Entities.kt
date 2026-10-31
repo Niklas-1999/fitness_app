@@ -1,6 +1,8 @@
 package dev.niklas.ironcore.data
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import dev.niklas.ironcore.domain.Activity
 import dev.niklas.ironcore.domain.Equip
@@ -70,10 +72,27 @@ data class PlayerEntity(
     val lastStr: Int, val lastEnd: Int, val lastAgi: Int, val lastVit: Int, val lastWil: Int,
     val streak: Int = 0,
     val bestStreak: Int = 0,
-    val lastActiveEpochDay: Long? = null
+    val lastActiveEpochDay: Long? = null,
+    /** progress points toward the next attribute value (DB v2) */
+    @ColumnInfo(defaultValue = "0") val strP: Int = 0,
+    @ColumnInfo(defaultValue = "0") val endP: Int = 0,
+    @ColumnInfo(defaultValue = "0") val agiP: Int = 0,
+    @ColumnInfo(defaultValue = "0") val vitP: Int = 0,
+    @ColumnInfo(defaultValue = "0") val wilP: Int = 0
 ) {
     val stats get() = listOf(str, end, agi, vit, wil)
     val lastStats get() = listOf(lastStr, lastEnd, lastAgi, lastVit, lastWil)
+    val points get() = listOf(strP, endP, agiP, vitP, wilP)
+
+    fun withStat(i: Int, value: Int, points: Int) = when (i) {
+        0 -> copy(str = value, strP = points)
+        1 -> copy(end = value, endP = points)
+        2 -> copy(agi = value, agiP = points)
+        3 -> copy(vit = value, vitP = points)
+        else -> copy(wil = value, wilP = points)
+    }
+
+    fun snapshotStats() = copy(lastStr = str, lastEnd = end, lastAgi = agi, lastVit = vit, lastWil = wil)
 }
 
 @Entity(tableName = "progression")
@@ -109,3 +128,33 @@ data class CardioEntity(@PrimaryKey val id: Int = 0, val c25kIndex: Int = 0)
 
 @Entity(tableName = "weight_log")
 data class WeightLogEntity(@PrimaryKey val epochDay: Long, val kg: Float)
+
+/** One completed quest (DB v2). itemKey = ladderId, "c25k" or "walk". */
+@Entity(tableName = "quest_log", indices = [Index("epochDay")])
+data class QuestLogEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val epochDay: Long,
+    val itemKey: String,
+    val kind: ItemKind,
+    val variationName: String,
+    val sets: Int,
+    val target: Int,
+    val loadKg: Float?,
+    val minutes: Int,
+    val rating: dev.niklas.ironcore.domain.Rating,
+    val xp: Int,
+    val deload: Boolean,
+    val timestamp: Long
+)
+
+/** Per-day summary (DB v2). */
+@Entity(tableName = "day_log")
+data class DayLogEntity(
+    @PrimaryKey val epochDay: Long,
+    val xp: Int = 0,
+    val quests: Int = 0,
+    val restCheckIn: Boolean = false,
+    val trainAnyway: Boolean = false,
+    val cleared: Boolean = false,
+    val activeMin: Int = 0
+)

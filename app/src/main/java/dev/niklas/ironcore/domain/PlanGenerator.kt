@@ -39,7 +39,7 @@ data class PlanItem(val kind: ItemKind, val ladderId: String? = null, val minute
 
 enum class SessionType(val label: String) {
     FULL_A("FULL BODY // A"), FULL_B("FULL BODY // B"), UPPER("UPPER"), LOWER("LOWER"),
-    RUN("RUN PROTOCOL"), CONDITIONING("CONDITIONING")
+    RUN("RUN PROTOCOL"), CONDITIONING("CONDITIONING"), EXTRA("BONUS OPS // RECOVERY-AWARE")
 }
 
 data class Session(val type: SessionType, val items: List<PlanItem>)
@@ -193,6 +193,26 @@ object PlanGenerator {
                 else ProgState(id, 1, sets, (s.plankSec * f).roundToInt().coerceIn(15, 60))
             "core_side" -> { val st = if (s.plankSec >= 30) 1 else 0; ProgState(id, st, sets, 15) }
             else -> ProgState(id, 0, sets, r(0).first)
+        }
+    }
+
+    /**
+     * Rest-day "TRAIN ANYWAY" session (SPEC §4): only ladders NOT trained in the last ~48 h
+     * ([recent]); if too few strength options are fresh, a light conditioning session.
+     */
+    fun extraSession(planLadders: List<String>, recent: Set<String>, sessionMin: Int): Session {
+        val core = setOf(Pattern.CORE, Pattern.CORE_SIDE, Pattern.BALANCE)
+        val order = listOf(Pattern.SQUAT, Pattern.HINGE, Pattern.PUSH, Pattern.ROW, Pattern.PULL, Pattern.LUNGE, Pattern.PUSH_V)
+        val fresh = planLadders.distinct().filter { it !in recent }
+        val strength = fresh.filter { Exercises.ladder(it).pattern !in core }
+            .sortedBy { order.indexOf(Exercises.ladder(it).pattern) }
+        val freshCore = fresh.filter { Exercises.ladder(it).pattern in core && it != "balance" }
+        val n = exerciseCount(sessionMin)
+        return if (strength.size >= 2) {
+            val picks = strength.take(maxOf(2, n - 1)) + freshCore.take(1)
+            Session(SessionType.EXTRA, picks.map { PlanItem(ItemKind.LADDER, it) })
+        } else {
+            Session(SessionType.CONDITIONING, listOf(PlanItem(ItemKind.WALK, minutes = 30)) + freshCore.take(2).map { PlanItem(ItemKind.LADDER, it) })
         }
     }
 

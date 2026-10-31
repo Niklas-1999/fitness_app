@@ -1,6 +1,7 @@
 package dev.niklas.ironcore.data
 
 import android.content.Context
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -11,9 +12,10 @@ import androidx.room.RoomDatabase
  */
 @Database(
     entities = [ProfileEntity::class, PlayerEntity::class, ProgressionEntity::class, PlanSlotEntity::class,
-        CardioEntity::class, WeightLogEntity::class],
-    version = 1,
-    exportSchema = true
+        CardioEntity::class, WeightLogEntity::class, QuestLogEntity::class, DayLogEntity::class],
+    version = 2,
+    exportSchema = true,
+    autoMigrations = [AutoMigration(from = 1, to = 2)]   // v2: quest_log, day_log, attribute points
 )
 abstract class IronDb : RoomDatabase() {
     abstract fun dao(): IronDao

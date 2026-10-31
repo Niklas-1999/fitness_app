@@ -16,6 +16,19 @@ interface IronDao {
     @Query("SELECT * FROM cardio WHERE id = 0") fun cardio(): Flow<CardioEntity?>
     @Query("SELECT * FROM weight_log ORDER BY epochDay") fun weights(): Flow<List<WeightLogEntity>>
 
+    @Query("SELECT * FROM quest_log WHERE epochDay >= :from ORDER BY timestamp DESC") fun questsSince(from: Long): Flow<List<QuestLogEntity>>
+    @Query("SELECT * FROM day_log WHERE epochDay >= :from ORDER BY epochDay") fun daysSince(from: Long): Flow<List<DayLogEntity>>
+
+    // one-shot reads for transactions
+    @Query("SELECT * FROM player WHERE id = 0") suspend fun playerNow(): PlayerEntity?
+    @Query("SELECT * FROM progression WHERE ladderId = :id") suspend fun progressionNow(id: String): ProgressionEntity?
+    @Query("SELECT * FROM day_log WHERE epochDay = :day") suspend fun dayNow(day: Long): DayLogEntity?
+    @Query("SELECT itemKey FROM quest_log WHERE epochDay = :day") suspend fun keysOnDay(day: Long): List<String>
+    @Query("SELECT * FROM cardio WHERE id = 0") suspend fun cardioNow(): CardioEntity?
+
+    @Insert suspend fun insertQuest(q: QuestLogEntity)
+    @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertDay(d: DayLogEntity)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertProfile(p: ProfileEntity)
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertPlayer(p: PlayerEntity)
     @Insert(onConflict = OnConflictStrategy.REPLACE) suspend fun upsertProgression(p: List<ProgressionEntity>)
@@ -29,17 +42,19 @@ interface IronDao {
     @Query("DELETE FROM player") suspend fun clearPlayer()
     @Query("DELETE FROM cardio") suspend fun clearCardio()
     @Query("DELETE FROM weight_log") suspend fun clearWeights()
+    @Query("DELETE FROM quest_log") suspend fun clearQuests()
+    @Query("DELETE FROM day_log") suspend fun clearDays()
 
     @Transaction
     suspend fun initialize(
         profile: ProfileEntity, player: PlayerEntity, slots: List<PlanSlotEntity>,
         progression: List<ProgressionEntity>, weight: WeightLogEntity
     ) {
-        clearPlan(); clearProgression(); clearCardio()
+        clearPlan(); clearProgression(); clearCardio(); clearQuests(); clearDays()
         upsertProfile(profile); upsertPlayer(player); insertPlan(slots); upsertProgression(progression)
         upsertCardio(CardioEntity()); upsertWeight(weight)
     }
 
     @Transaction
-    suspend fun wipe() { clearPlan(); clearProgression(); clearProfile(); clearPlayer(); clearCardio(); clearWeights() }
+    suspend fun wipe() { clearPlan(); clearProgression(); clearProfile(); clearPlayer(); clearCardio(); clearWeights(); clearQuests(); clearDays() }
 }

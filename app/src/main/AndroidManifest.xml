@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- haptic cues for the run interval timer; normal permission, no prompt -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <application
         android:label="IRONCORE"
         android:allowBackup="false"
