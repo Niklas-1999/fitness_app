@@ -19,6 +19,8 @@ android {
         targetSdk = 35
         versionCode = 1
         versionName = "0.1"
+        // the phone is arm64; skip other ABIs of the OCR native libs to keep the APK small
+        ndk { abiFilters += listOf("arm64-v8a") }
     }
 
     buildTypes {
@@ -38,6 +40,7 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
+    androidResources { noCompress += "traineddata" }
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
@@ -58,6 +61,9 @@ dependencies {
     implementation("androidx.room:room-runtime:$room")
     implementation("androidx.room:room-ktx:$room")
     ksp("androidx.room:room-compiler:$room")
+
+    // offline OCR for EU nutrition labels (Tesseract 5, Apache-2.0)
+    implementation("cz.adaptech.tesseract4android:tesseract4android:4.9.0")
 
     testImplementation("junit:junit:4.13.2")
 }

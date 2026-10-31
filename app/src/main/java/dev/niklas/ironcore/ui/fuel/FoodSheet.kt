@@ -31,6 +31,12 @@ import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import dev.niklas.ironcore.audio.LocalFx
 import dev.niklas.ironcore.data.FoodEntity
+import dev.niklas.ironcore.ocr.LabelOcr
+import dev.niklas.ironcore.ui.theme.CyberPalette
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import kotlinx.coroutines.launch
 import dev.niklas.ironcore.ui.components.BtnStyle
 import dev.niklas.ironcore.ui.components.ChipRow
 import dev.niklas.ironcore.ui.components.CyberButton
@@ -45,7 +51,7 @@ import dev.niklas.ironcore.ui.theme.Cyber
 import dev.niklas.ironcore.ui.theme.T
 import kotlin.math.roundToInt
 
-private enum class Mode { PICK, EDIT, PORTION }
+private enum class Mode { PICK, SCANNING, EDIT, PORTION }
 
 /**
  * Log food: pick a saved food (most recent first) → portion in grams → log.
@@ -59,6 +65,16 @@ fun FoodSheet(foods: List<FoodEntity>, onLog: (FoodEntity, Float, Boolean) -> Un
     var mode by remember { mutableStateOf(Mode.PICK) }
     var food by remember { mutableStateOf<FoodEntity?>(null) }
     var save by remember { mutableStateOf(true) }
+    var scan by remember { mutableStateOf<LabelOcr.Result?>(null) }
+    var scanUri by remember { mutableStateOf<android.net.Uri?>(null) }
+    var pending by remember { mutableStateOf<android.net.Uri?>(null) }
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
+        if (ok && pending != null) { scanUri = pending; mode = Mode.SCANNING }
+    }
+    val gallery = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        if (uri != null) { scanUri = uri; mode = Mode.SCANNING }
+    }
     androidx.activity.compose.BackHandler { if (mode == Mode.PICK) onClose() else { fx.glitch(); mode = Mode.PICK } }
     Box(
         Modifier.fillMaxSize().background(p.k01.copy(alpha = .985f))
@@ -72,9 +88,12 @@ fun FoodSheet(foods: List<FoodEntity>, onLog: (FoodEntity, Float, Boolean) -> Un
             }
             Spacer(Modifier.height(10.dp))
             when (mode) {
-                Mode.PICK -> PickFood(foods, onNew = { food = null; mode = Mode.EDIT }, onPick = { food = it; save = true; mode = Mode.PORTION },
-                    onEdit = { food = it; mode = Mode.EDIT }, onDelete = onDeleteFood)
-                Mode.EDIT -> FoodEditor(food) { f -> food = f; mode = Mode.PORTION }
+                Mode.PICK -> PickFood(foods, onNew = { food = null; scan = null; mode = Mode.EDIT }, onPick = { food = it; save = true; mode = Mode.PORTION },
+                    onEdit = { food = it; scan = null; mode = Mode.EDIT }, onDelete = onDeleteFood,
+                    onCamera = { pending = LabelOcr.newPhotoUri(ctx); camera.launch(pending!!) },
+                    onGallery = { gallery.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) })
+                Mode.SCANNING -> ScanProgress(scanUri!!, onDone = { r -> scan = r; food = null; mode = Mode.EDIT }, onFail = { mode = Mode.PICK })
+                Mode.EDIT -> FoodEditor(food, scan) { f -> food = f; mode = Mode.PORTION }
                 Mode.PORTION -> Portion(food!!, save, { save = it }) { g -> onLog(food!!, g, save) }
             }
         }
@@ -82,12 +101,25 @@ fun FoodSheet(foods: List<FoodEntity>, onLog: (FoodEntity, Float, Boolean) -> Un
 }
 
 @Composable
-private fun PickFood(foods: List<FoodEntity>, onNew: () -> Unit, onPick: (FoodEntity) -> Unit, onEdit: (FoodEntity) -> Unit, onDelete: (Long) -> Unit) {
+private fun PickFood(
+    foods: List<FoodEntity>, onNew: () -> Unit, onPick: (FoodEntity) -> Unit, onEdit: (FoodEntity) -> Unit, onDelete: (Long) -> Unit,
+    onCamera: () -> Unit, onGallery: () -> Unit
+) {
     val p = Cyber.c
     var q by remember { mutableStateOf("") }
+    CyberPanel(Modifier.fillMaxWidth(), padding = 14.dp) {
+        PanelHeader("SC", "LABEL_SCANNER", "OFFLINE OCR")
+        Txt("Photograph the nutrition table (per 100 g column). Flat, well lit, fill the frame.", T.body(14.sp, p.textDim))
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            CyberButton("SCAN // CAMERA", Modifier.weight(1.4f)) { onCamera() }
+            CyberButton("GALLERY", Modifier.weight(1f), BtnStyle.OUTLINE) { onGallery() }
+        }
+    }
+    Spacer(Modifier.height(12.dp))
     CyberPanel(Modifier.fillMaxWidth()) {
         PanelHeader("DB", "MY_FOODS", "${foods.size} SAVED")
-        CyberButton("+ NEW FOOD (FROM LABEL)", Modifier.fillMaxWidth()) { onNew() }
+        CyberButton("+ ENTER LABEL MANUALLY", Modifier.fillMaxWidth(), BtnStyle.OUTLINE) { onNew() }
         Spacer(Modifier.height(10.dp))
         if (foods.isNotEmpty()) TermInput(q, { q = it }, placeholder = "SEARCH_", maxLen = 30)
         Spacer(Modifier.height(8.dp))
@@ -109,21 +141,38 @@ private fun fmt(v: Float) = if (v >= 10) v.roundToInt().toString() else "%.1f".f
 
 /** EU nutrition declaration editor, per 100 g / 100 ml (Reg. 1169/2011 Annex XV order). */
 @Composable
-fun FoodEditor(initial: FoodEntity?, onDone: (FoodEntity) -> Unit) {
+fun FoodEditor(initial: FoodEntity?, scan: LabelOcr.Result? = null, onDone: (FoodEntity) -> Unit) {
     val p = Cyber.c
+    val v = scan?.values
     var name by remember { mutableStateOf(initial?.name ?: "") }
-    var kcal by remember { mutableStateOf(initial?.kcal) }
+    var kcal by remember { mutableStateOf(initial?.kcal ?: v?.kcal) }
     var kj by remember { mutableStateOf<Float?>(null) }
-    var fat by remember { mutableStateOf(initial?.fat) }
-    var sat by remember { mutableStateOf(initial?.satFat) }
-    var carbs by remember { mutableStateOf(initial?.carbs) }
-    var sugar by remember { mutableStateOf(initial?.sugar) }
-    var protein by remember { mutableStateOf(initial?.protein) }
-    var salt by remember { mutableStateOf(initial?.salt) }
-    var fibre by remember { mutableStateOf(initial?.fibre) }
+    var fat by remember { mutableStateOf(initial?.fat ?: v?.fat) }
+    var sat by remember { mutableStateOf(initial?.satFat ?: v?.satFat) }
+    var carbs by remember { mutableStateOf(initial?.carbs ?: v?.carbs) }
+    var sugar by remember { mutableStateOf(initial?.sugar ?: v?.sugar) }
+    var protein by remember { mutableStateOf(initial?.protein ?: v?.protein) }
+    var salt by remember { mutableStateOf(initial?.salt ?: v?.salt) }
+    var fibre by remember { mutableStateOf(initial?.fibre ?: v?.fibre) }
+    var showRaw by remember { mutableStateOf(false) }
+    if (scan != null) {
+        CyberPanel(Modifier.fillMaxWidth()) {
+            PanelHeader("OCR", "SCAN_RESULT", "${scan.millis / 100 / 10f} S")
+            Txt("${scan.values.found}/8 FIELDS DECODED", T.head(16.sp, if (scan.values.found >= 6) CyberPalette.UP else CyberPalette.AMBER))
+            Txt(
+                if (scan.values.consistent) "> ENERGY MATCHES THE MACROS. LOOKS RIGHT. STILL CHECK EVERY VALUE."
+                else "> CHECK ALL VALUES AGAINST THE PACK. MISSING OR SUSPICIOUS FIELDS ARE EMPTY.",
+                T.mono(10.sp, if (scan.values.consistent) CyberPalette.UP else CyberPalette.AMBER, 0.sp).copy(lineHeight = 1.5.em),
+                Modifier.padding(top = 4.dp)
+            )
+            Txt(if (showRaw) "▲ HIDE RAW OCR" else "▼ SHOW RAW OCR", T.mono(10.sp, p.textDim), Modifier.clickable { showRaw = !showRaw }.padding(vertical = 6.dp))
+            if (showRaw) Txt(scan.text.ifBlank { "(no text recognized)" }, T.mono(10.sp, p.textMute, 0.sp))
+        }
+        Spacer(Modifier.height(12.dp))
+    }
     CyberPanel(Modifier.fillMaxWidth()) {
         PanelHeader("LBL", "NUTRITION_LABEL", "PER 100 G / ML")
-        Txt("Copy the values from the nutrition table on the pack (per 100 g column).", T.body(14.sp, p.textDim))
+        Txt(if (scan != null) "Give it a name, check the values, fill gaps." else "Copy the values from the nutrition table on the pack (per 100 g column).", T.body(14.sp, p.textDim))
         FieldLabel("NAME", Modifier.padding(top = 8.dp))
         TermInput(name, { name = it }, placeholder = "E.G. OATS_", maxLen = 32)
         FieldLabel("ENERGY (KCAL) // OR ENTER KJ BELOW")
@@ -145,6 +194,40 @@ fun FoodEditor(initial: FoodEntity?, onDone: (FoodEntity) -> Unit) {
             ))
         }
         Txt("Required: name, energy, fat, carbohydrate, protein.", T.mono(9.sp, p.textMute), Modifier.padding(top = 6.dp))
+    }
+}
+
+/** Runs offline OCR on the photo with a terminal-style progress log. */
+@Composable
+private fun ScanProgress(uri: android.net.Uri, onDone: (LabelOcr.Result) -> Unit, onFail: () -> Unit) {
+    val p = Cyber.c
+    val fx = LocalFx.current
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val lines = listOf("LOADING OPTICAL MATRIX", "NORMALIZING IMAGE", "RUNNING NEURAL OCR // DEU+ENG", "PARSING EU NUTRITION DECLARATION", "CROSS-CHECKING ENERGY")
+    var shown by remember { mutableStateOf(0) }
+    var error by remember { mutableStateOf<String?>(null) }
+    androidx.compose.runtime.LaunchedEffect(uri) {
+        val job = kotlinx.coroutines.coroutineScope {
+            val anim = launch { while (shown < lines.size - 1) { kotlinx.coroutines.delay(450); shown++; fx.boot() } }
+            val r = runCatching { LabelOcr.scan(ctx, uri) }
+            anim.cancel()
+            r
+        }
+        job.onSuccess { shown = lines.size; fx.complete(); kotlinx.coroutines.delay(300); onDone(it) }
+            .onFailure { error = it.message ?: "SCAN FAILED"; fx.error() }
+    }
+    CyberPanel(Modifier.fillMaxWidth()) {
+        PanelHeader("OCR", "DECODING_LABEL", if (error == null) "RUNNING" else "ERROR", live = error == null)
+        lines.take(shown + 1).forEachIndexed { i, l ->
+            Txt("> $l " + if (i < shown) "... OK" else "_", T.mono(12.sp, p.accent, 0.sp, glow = p.acc(.5f)), Modifier.padding(vertical = 2.dp))
+        }
+        Spacer(Modifier.height(10.dp))
+        dev.niklas.ironcore.ui.components.NeonBar((shown + 1) / lines.size.toFloat(), height = 5.dp, durationMs = 400)
+        error?.let {
+            Txt("> $it", T.mono(12.sp, dev.niklas.ironcore.ui.theme.CyberPalette.DOWN), Modifier.padding(top = 10.dp))
+            Spacer(Modifier.height(10.dp))
+            CyberButton("< BACK", Modifier.fillMaxWidth(), BtnStyle.OUTLINE) { onFail() }
+        }
     }
 }
 

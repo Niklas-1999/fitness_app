@@ -100,7 +100,7 @@ Result: a **STATUS REPORT** screen showing starting stats, rank, the generated p
 
 - **Daily targets** (R§9–11): kcal from Mifflin BMR × PAL ± the goal adjustment (never below BMR), protein 1.6 or 2.0 g/kg, fat 30% of energy, carbs as the rest, fibre 25 g, water 2.0/2.5 L, plus EU reference values for sugar and salt shown for information.
 - **Logging:**
-  - **Scan an EU nutrition label** with the camera → offline OCR → parses kcal, fat, saturates, carbs, sugars, protein, salt (+ fibre) per 100 g → "I ate **[ 200 ] g**" or "whole package (g)". The food is saved to "my foods" for one-tap re-logging. The user always confirms or edits the parsed values first.
+  - **Scan an EU nutrition label** (done, P4): the system camera app (no camera permission) or the photo picker (no storage permission) → Tesseract 5 OCR on the device (`deu+eng` fast models, Apache-2.0) → `LabelParser` extracts kcal (or kJ → kcal), fat, saturates, carbs, sugars, protein, salt, fibre from the **first (per 100 g) column**. It ignores %RI, repairs typical OCR errors ("g" read as "9", O/0, l/1), rejects implausible values (saturates > fat, sugars > carbs), and cross-checks energy against the macros. The result pre-fills the label editor with a "N/8 fields decoded" status and the raw OCR text. The user always confirms → portion → logged and saved to "my foods".
   - Manual entry, recent foods, favourites, edit/delete entries.
 - **UI:** macro rings or bars that fill (cyberpunk gauges), with remaining kcal as a big counter. A daily VIT reward when targets are met.
 - **Water:** +250/+500 ml buttons against the EFSA target.

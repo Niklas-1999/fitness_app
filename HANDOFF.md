@@ -6,7 +6,8 @@ Repo: https://github.com/Niklas-1999/fitness_app (public; clone over SSH: `git@g
 
 ## Current status (updated 2026-11-01)
 
-- **P0 visual system, P1 onboarding/plan, P2 quest engine and P3 nutrition are done and tested on the phone.**
+- **P0 visual system, P1 onboarding/plan, P2 quest engine, P3 nutrition and P4 label scanner are done and tested on the phone.**
+- **P4 contents (2026-11-01):** `ocr/LabelOcr.kt` (Tesseract4Android 4.9.0 from JitPack, `assets/tessdata/{deu,eng}.traineddata` from tessdata_fast; EXIF rotation, grayscale + contrast, tries PSM 6 and PSM 3 and keeps the better parse), `domain/LabelParser.kt` (7 tests incl. real on-device OCR output). FoodSheet: LABEL_SCANNER (camera via `TakePicture` + FileProvider `cache/scans`, gallery via photo picker) → DECODING_LABEL → pre-filled editor. ABI filter arm64-v8a. Verified on the phone: synthetic rotated, noisy label → 8/8 fields correct in 0.9 s. APK has no INTERNET permission and no Google classes. `tools/make_test_label.py` renders test labels.
 - **P3 contents (2026-11-01):** DB **v3** (`AutoMigration(2→3)`, tested on the phone): `food` (EU label values per 100 g), `food_log`, plus water / protein-goal / water-goal / reroll columns on `day_log`. FUEL tab (`ui/fuel/`): gauge, macros, EU reference-intake info, water, intake log, weight tracker with trend chart, metabolic calibration status. `FoodSheet`: my foods (search, edit, delete) → portion → log; new food editor in EU label order (kcal or kJ). `domain/Adaptive.kt`: adaptive TDEE (3 tests). Nutrition rewards (+VIT). **Daily reroll** and **ARSENAL** free training (see SPEC §4).
 - **P2 contents:**
   - DB **v2** via Room `AutoMigration(1→2)`: `quest_log`, `day_log`, attribute point columns. Tested: a v1 install upgraded on the phone with its data kept.
@@ -21,8 +22,8 @@ Repo: https://github.com/Niklas-1999/fitness_app (public; clone over SSH: `git@g
 
 ## Next steps
 
-1. **P4 EU label scanner:** CameraX + offline OCR (check the Tesseract4Android licence first, bundle `deu`+`eng` traineddata), parse the 7 mandatory fields + fibre (`RESEARCH.md` §12), pre-fill `FoodEditor`.
-2. P5 profile/achievements/cosmetics, P6 export/import, reminders, signed release APK.
+1. **P5 profile, achievements, cosmetics** (`SPEC.md` §6): handle, avatar + banner via photo picker, titles/frames/banners unlocked by achievements.
+2. **P6:** JSON export/import (SAF), local reminders, release keystore + signed release APK (R8), final checks. Real-world test: Niklas should scan real packages and report misreads (add their raw OCR text to `LabelParserTest`).
 3. Known small issues: walk quests don't log the user's actual pace; there's no history chart yet; the run timer relies on the screen staying on (no foreground service).
 
 ## Dev loop (how Niklas sees changes live)
