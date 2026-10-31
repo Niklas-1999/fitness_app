@@ -4,17 +4,21 @@ You are starting a fresh session. This file has everything decided so far and is
 
 Repo: https://github.com/Niklas-1999/fitness_app (public; clone over SSH: `git@github.com:Niklas-1999/fitness_app.git`).
 
-## Current status (updated 2026-10-31)
+## Current status (updated 2026-10-31, late evening)
 
-- **Done:** Toolchain set up. Gradle/Kotlin/Compose skeleton builds and runs on the phone. It contains only a test screen (`MainActivity.kt`: a panel with an XP counter button). The live dev loop is verified: an edit shows up on the phone in ~20 s.
-- **Not started:** discovery questions, `SPEC.md`, app name, real features, release keystore, Room DB.
-- **Placeholder IDs:** package `dev.niklas.fitnessrpg` (the debug build is `dev.niklas.fitnessrpg.debug`), label "Fitness RPG". Rename once a name is chosen, **before** the first release install (changing the applicationId later means a new app with empty data).
+- **Done:**
+  - Toolchain and live dev loop (`./dev.sh`, scrcpy mirror, ~20 s edit→phone).
+  - **Research** for all training/nutrition rules, with sources → `RESEARCH.md`. Use only numbers from there.
+  - **`SPEC.md` written (draft, waiting for Niklas's approval).** It contains Niklas's product vision: onboarding questionnaire → generated plan with projections → daily quests (RPG) → XP/levels/stats/streak, rest-day mechanic, nutrition targets + EU label scanner, profile/achievements/cosmetics. Levelling curve and anti-overtraining XP are simulated in `tools/level_curve.py`.
+  - **P0 visual system built and running on the phone:** theme engine (one accent → whole palette, 12 presets + custom picker, persisted), Cryptobro-style panels/frames/fonts, animated backdrop (grid, sun, data rain, dust, glitch bars), scanlines/vignette/sweep, boot sequence, glitch text, animated XP/neon bars, stat radar, fuel gauge, level-up overlay, synthesized SFX (`tools/gen_sfx.py`) + haptics. The current screen is a **demo HUD with mock data** (`ui/demo/HudDemo.kt`).
+- **Visual reference:** Niklas's dashboard https://github.com/Niklas-1999/Cryptobro (live: https://niklas-1999.github.io/Cryptobro/). He wants **exactly that over-the-top cyberpunk style** everywhere. No rounded "AI-style" minimalism.
+- **Placeholder IDs:** package `dev.niklas.fitnessrpg` (debug: `.debug`), title "FITNESS_RPG". Rename once a name is chosen, **before** the first release install.
 
 ## Next steps
 
-1. Ask Niklas the discovery questions (see "Process" below). They were asked once on 2026-10-31 but not answered yet.
-2. Write `SPEC.md` and get his approval.
-3. Generate the release keystore (`~/android-tools/keys/release.jks`), wire up signing, then build the MVP.
+1. Get Niklas's answers to the open questions in `SPEC.md` §11 (app name, stats/rank names, streak/rest rules, deferring online features) and his approval of the spec.
+2. Build **P1**: Room DB (with migrations) + onboarding questionnaire + calibration test + plan generator + status report/forecast.
+3. Then continue P2–P6 in the order given in `SPEC.md` §10.
 
 ## Dev loop (how Niklas sees changes live)
 
@@ -37,7 +41,8 @@ Everything lives in `~/android-tools/` (no sudo). On a new machine, recreate it:
 
 - **Niklas is the architect and product owner.** He describes ideas, mechanics and visual preferences. He does not want to write code.
 - **You are the engineer.** You design the details, write all the code, build it and install it.
-- **The deliverable is a fully working, signed, installable APK** on his phone. A prototype or "here's the code, build it yourself" is not enough. Iterate until it runs.
+- **The deliverable is a fully working, signed, installable APK** on his phone.
+- **Project docs:** `SPEC.md` (what we build), `RESEARCH.md` (evidence for every training/nutrition number), `tools/` (sound generator, level curve simulation). A prototype or "here's the code, build it yourself" is not enough. Iterate until it runs.
 - Niklas has built and deployed web apps, games and GitHub Pages sites with Claude before. He is technical and trusts you to make engineering decisions.
 - **Working style:** concise and direct. Decide sensible defaults and report them, without long back-and-forth. When showing edits, show only the changed parts. Ask only about things that are truly his call: mechanics, look and feel, and priorities.
 
