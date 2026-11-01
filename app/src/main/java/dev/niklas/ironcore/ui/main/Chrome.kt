@@ -204,7 +204,7 @@ fun QuestRow(
     target: String,
     meta: String,
     done: Boolean,
-    action: String? = "EXECUTE",
+    action: String? = "CLEAR",
     secondary: String? = null,
     onSecondary: () -> Unit = {},
     onExecute: () -> Unit = {}

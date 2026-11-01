@@ -6,7 +6,8 @@ Repo: https://github.com/Niklas-1999/fitness_app (public; clone over SSH: `git@g
 
 ## Current status (updated 2026-11-01)
 
-- **P0–P5 are done and tested on the phone** (visual system, onboarding/plan, quest engine, nutrition, label scanner, profile/achievements/cosmetics/logo).
+- **P0–P6 are done and tested on the phone. v1.0 release is installed** (package `dev.niklas.ironcore`, next to the `.debug` dev build).
+- **P6 contents (2026-11-01):** quest buttons say CLEAR. `data/Backup.kt`: generic JSON export/import of all tables + settings prefs + profile images (base64); imports older schemas (unknown columns skipped). UI: PROFILE → DATA_VAULT, and RESTORE FROM BACKUP on the first setup screen (new phone). `notify/Reminders.kt`: local reminders (directive reminder on training days if nothing is done yet, streak guard if the streak would break). Inexact `AlarmManager`, re-armed on boot/update; POST_NOTIFICATIONS asked when switched on. Release: R8 + `proguard-rules.pro` (Tesseract JNI keep rules), signed. `./release.sh` builds, verifies (no INTERNET, no Google classes), copies `IRONCORE-<version>.apk` to the project root and installs. Verified in the release build: restore from backup, OCR 8/8, notifications, alarm scheduled.
 - **P5 contents (2026-11-01):** DB **v4** (`AutoMigration(3→4)`, tested): `achievement`, `cosmetics`, plus a `Counters` query. `domain/Achievements.kt` (catalog + `Cosmetics`, 2 tests incl. "every cosmetic is obtainable"). `ui/profile/`: `CosmeticViews` (IroncoreLogo, Avatar frames, Banner styles, StyledName effects), `ProfileTab` (OperativeCard, editor, achievement grid, settings, AchievementOverlay), `ImageStore` (photo picker → cropped JPEG in `filesDir/profile`). Launcher icon: `res/drawable/ic_launcher_*` + `mipmap-anydpi-v26`.
 - **P4 contents (2026-11-01):** `ocr/LabelOcr.kt` (Tesseract4Android 4.9.0 from JitPack, `assets/tessdata/{deu,eng}.traineddata` from tessdata_fast; EXIF rotation, grayscale + contrast, tries PSM 6 and PSM 3 and keeps the better parse), `domain/LabelParser.kt` (7 tests incl. real on-device OCR output). FoodSheet: LABEL_SCANNER (camera via `TakePicture` + FileProvider `cache/scans`, gallery via photo picker) → DECODING_LABEL → pre-filled editor. ABI filter arm64-v8a. Verified on the phone: synthetic rotated, noisy label → 8/8 fields correct in 0.9 s. APK has no INTERNET permission and no Google classes. `tools/make_test_label.py` renders test labels.
 - **P3 contents (2026-11-01):** DB **v3** (`AutoMigration(2→3)`, tested on the phone): `food` (EU label values per 100 g), `food_log`, plus water / protein-goal / water-goal / reroll columns on `day_log`. FUEL tab (`ui/fuel/`): gauge, macros, EU reference-intake info, water, intake log, weight tracker with trend chart, metabolic calibration status. `FoodSheet`: my foods (search, edit, delete) → portion → log; new food editor in EU label order (kcal or kJ). `domain/Adaptive.kt`: adaptive TDEE (3 tests). Nutrition rewards (+VIT). **Daily reroll** and **ARSENAL** free training (see SPEC §4).
@@ -21,9 +22,18 @@ Repo: https://github.com/Niklas-1999/fitness_app (public; clone over SSH: `git@g
 - **Custom sounds:** `sounds/<role>.mp3` + `tools/import_sfx.sh` (see `sounds/README.md`).
 - **Testing helpers:** `tools/phone.sh` (tap by text, `edit N value`, shot, texts) drives the app over adb.
 
+## Release signing (IMPORTANT)
+
+- Keystore: `~/android-tools/keys/ironcore-release.jks`, alias `ironcore`, RSA 4096, valid 100 years. The SHA-256 cert fingerprint starts with `EF:C5:D8:73`.
+- Passwords: in `~/android-tools/keys/keystore.properties`, copied to the project root as `keystore.properties` (git-ignored).
+- **Niklas must back up both files** (USB stick + password manager). Without them, updates can't be installed over the existing app, and a reinstall loses the data unless an IRONCORE backup file exists.
+- On a new PC: copy both files back, put `keystore.properties` in the project root (fix `storeFile` if the home path differs), then run `./release.sh`.
+- Every release: bump `versionCode` (+1) and `versionName` in `app/build.gradle.kts`, run `./release.sh`, and `adb install -r` keeps the data.
+
 ## Next steps
 
-1. **P6:** JSON export/import (SAF), local reminders, release keystore + signed release APK (R8), final checks. Real-world test: Niklas should scan real packages and report misreads (add their raw OCR text to `LabelParserTest`).
+1. Niklas uses v1.0 day to day (re-initialize with real data; the release app currently holds the restored RUNNER test profile). Collect feedback: target difficulty, XP pacing, real-label OCR misreads (add their raw OCR text to `LabelParserTest`).
+2. Possible v1.x ideas: history charts per exercise, editable plan (swap exercises / days), more achievements, a scan crop frame, a home-screen widget. **v2 (decided: later):** opt-in sync, leaderboard and friends against a self-hosted server (SPEC §9).
 3. Known small issues: walk quests don't log the user's actual pace; there's no history chart yet; the run timer relies on the screen staying on (no foreground service).
 
 ## Dev loop (how Niklas sees changes live)

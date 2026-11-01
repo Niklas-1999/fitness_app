@@ -21,6 +21,7 @@ interface IronDao {
 
     // one-shot reads for transactions
     @Query("SELECT * FROM player WHERE id = 0") suspend fun playerNow(): PlayerEntity?
+    @Query("SELECT * FROM profile WHERE id = 0") suspend fun profileNow(): ProfileEntity?
     @Query("SELECT * FROM progression WHERE ladderId = :id") suspend fun progressionNow(id: String): ProgressionEntity?
     @Query("SELECT * FROM day_log WHERE epochDay = :day") suspend fun dayNow(day: Long): DayLogEntity?
     @Query("SELECT itemKey FROM quest_log WHERE epochDay = :day") suspend fun keysOnDay(day: Long): List<String>

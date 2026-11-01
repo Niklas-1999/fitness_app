@@ -112,8 +112,8 @@ Result: a **STATUS REPORT** screen showing starting stats, rank, the generated p
 ## 8. Data, privacy, platform
 
 - Kotlin + Jetpack Compose, **Room** with real migrations, DataStore for settings, CameraX for the label scanner, Tesseract4Android OCR (offline). Min Android 8.0.
-- **No INTERNET permission** in v1. All data stays on the phone. **Export/import** as a JSON file through the system file picker.
-- Reminders: local notifications on training days (optional).
+- **No INTERNET permission** in v1. All data stays on the phone. **Export/import (done, P6)** as one JSON file through the system file picker (all tables, settings, profile images). Restore is also offered on the first setup screen.
+- **Reminders (done, P6):** optional local notifications. A directive reminder on training days at a chosen hour (only if nothing is done yet) and a streak guard in the evening (only if the streak would break).
 
 ## 9. Later: online features (not in v1, decided 2026-10-31)
 

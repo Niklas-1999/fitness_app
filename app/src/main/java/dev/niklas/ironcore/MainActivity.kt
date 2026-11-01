@@ -41,6 +41,7 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(AColor.TRANSPARENT)
         )
         fx = Fx(this).also { it.view = window.decorView }
+        dev.niklas.ironcore.notify.Reminders.schedule(this)
         val theme = ThemeState(this)
         setContent {
             CompositionLocalProvider(LocalFx provides fx) {
@@ -57,7 +58,7 @@ class MainActivity : ComponentActivity() {
                             when (kind) {
                                 AppState.NeedsSetup::class -> {
                                     val vm: OnboardingVM = viewModel()
-                                    OnboardingFlow(vm) { setup, plan -> app.initialize(setup, plan) }
+                                    OnboardingFlow(vm, onRestore = { app.importData(it) { recreate() } }, restoreMessage = app.dataMessage) { setup, plan -> app.initialize(setup, plan) }
                                 }
                                 AppState.Ready::class -> (state as? AppState.Ready)?.let {
                                     MainScreen(it, app.lastResult, { app.lastResult = null }, MainActions(
@@ -72,7 +73,9 @@ class MainActivity : ComponentActivity() {
                                         profile = { dbg -> dev.niklas.ironcore.ui.profile.ProfileActions(
                                             saveCosmetics = { app.saveCosmetics(it) }, setHandle = { app.setHandle(it) },
                                             setImage = { u, b -> app.setImage(u, b) }, clearImage = { app.clearImage(it) },
-                                            reinitialize = { app.wipe() }, debugRun = dbg
+                                            reinitialize = { app.wipe() }, debugRun = dbg,
+                                            exportData = { app.exportData(it) }, importData = { app.importData(it) { recreate() } },
+                                            dataMessage = app.dataMessage
                                         ) },
                                         achievementsSeen = { app.markAchievementsSeen() }
                                     ))

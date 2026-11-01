@@ -68,7 +68,10 @@ class ProfileActions(
     val setImage: (android.net.Uri, Boolean) -> Unit,
     val clearImage: (Boolean) -> Unit,
     val reinitialize: () -> Unit,
-    val debugRun: () -> Unit
+    val debugRun: () -> Unit,
+    val exportData: (android.net.Uri) -> Unit,
+    val importData: (android.net.Uri) -> Unit,
+    val dataMessage: String?
 )
 
 fun titleOf(id: String) = Cosmetics.get(id)?.name ?: "NEW BLOOD"
@@ -242,9 +245,16 @@ private fun Settings(s: AppState.Ready, a: ProfileActions) {
         OptionCard("SOUND EFFECTS", if (sound) "ON" else "OFF", sound, Modifier.padding(bottom = 8.dp)) { sound = !sound; fx.soundOn = sound }
         OptionCard("HAPTICS", if (haptics) "ON" else "OFF", haptics) { haptics = !haptics; fx.hapticsOn = haptics }
     }
+    RemindersPanel()
+    DataPanel(a)
     if (androidx.compose.ui.platform.LocalContext.current.packageName.endsWith(".debug")) CyberPanel(Modifier.fillMaxWidth()) {
         PanelHeader("DBG", "DEBUG_TOOLS", "DEV BUILD ONLY")
         CyberButton("TEST RUN TIMER (NOT SAVED)", Modifier.fillMaxWidth(), BtnStyle.OUTLINE) { a.debugRun() }
+        Spacer(Modifier.height(8.dp))
+        val ctx = androidx.compose.ui.platform.LocalContext.current
+        CyberButton("TEST NOTIFICATION", Modifier.fillMaxWidth(), BtnStyle.OUTLINE) {
+            dev.niklas.ironcore.notify.Reminders.notify(ctx, 99, "STREAK AT RISK // 12 DAYS", "Nothing logged today. One quest or a rest check-in before midnight keeps it alive.")
+        }
     }
     CyberPanel(Modifier.fillMaxWidth()) {
         PanelHeader("!!", "RE-INITIALIZE", "DESTRUCTIVE")
@@ -255,6 +265,69 @@ private fun Settings(s: AppState.Ready, a: ProfileActions) {
             CyberButton("CANCEL", Modifier.weight(1f), BtnStyle.OUTLINE) { confirm = false }
             CyberButton("CONFIRM WIPE", Modifier.weight(1f)) { fx.glitch(); a.reinitialize() }
         }
+    }
+}
+
+@Composable
+private fun RemindersPanel() {
+    val p = Cyber.c
+    val fx = LocalFx.current
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    var cfg by remember { mutableStateOf(dev.niklas.ironcore.notify.Reminders.config(ctx)) }
+    var pendingCfg by remember { mutableStateOf<dev.niklas.ironcore.notify.Reminders.Config?>(null) }
+    val perm = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
+        pendingCfg?.let { if (ok) { cfg = it; dev.niklas.ironcore.notify.Reminders.save(ctx, it) } else fx.error() }
+        pendingCfg = null
+    }
+    fun update(c: dev.niklas.ironcore.notify.Reminders.Config) {
+        val turningOn = (c.directive && !cfg.directive) || (c.streak && !cfg.streak)
+        if (turningOn && !dev.niklas.ironcore.notify.Reminders.canNotify(ctx) && android.os.Build.VERSION.SDK_INT >= 33) {
+            pendingCfg = c; perm.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+        } else { cfg = c; dev.niklas.ironcore.notify.Reminders.save(ctx, c) }
+    }
+    CyberPanel(Modifier.fillMaxWidth()) {
+        PanelHeader("RM", "REMINDERS", "LOCAL // NO PUSH SERVER")
+        OptionCard("DIRECTIVE REMINDER", if (cfg.directive) "Training days at %02d:00, only if nothing is done yet".format(cfg.directiveHour) else "OFF", cfg.directive,
+            Modifier.padding(bottom = 6.dp)) { update(cfg.copy(directive = !cfg.directive)) }
+        if (cfg.directive) HourRow(cfg.directiveHour) { update(cfg.copy(directiveHour = it)) }
+        OptionCard("STREAK GUARD", if (cfg.streak) "Every day at %02d:00 if your streak would break".format(cfg.streakHour) else "OFF", cfg.streak,
+            Modifier.padding(top = 6.dp, bottom = 6.dp)) { update(cfg.copy(streak = !cfg.streak)) }
+        if (cfg.streak) HourRow(cfg.streakHour) { update(cfg.copy(streakHour = it)) }
+    }
+}
+
+@Composable
+private fun HourRow(hour: Int, onChange: (Int) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(bottom = 4.dp)) {
+        CyberButton("−", Modifier.width(52.dp), BtnStyle.OUTLINE) { onChange((hour + 23) % 24) }
+        Txt("%02d:00".format(hour), T.head(20.sp, Color.White, glow = 12f), Modifier.weight(1f))
+        CyberButton("+", Modifier.width(52.dp), BtnStyle.OUTLINE) { onChange((hour + 1) % 24) }
+    }
+}
+
+@Composable
+private fun DataPanel(a: ProfileActions) {
+    val p = Cyber.c
+    val fx = LocalFx.current
+    var confirmImport by remember { mutableStateOf(false) }
+    val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri -> if (uri != null) { fx.complete(); a.exportData(uri) } }
+    val import = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) { fx.glitch(); a.importData(uri) } }
+    CyberPanel(Modifier.fillMaxWidth()) {
+        PanelHeader("DB", "DATA_VAULT", "OFFLINE BACKUP")
+        Txt("Everything lives only on this phone. Export a backup file regularly (e.g. to your PC or a USB stick). Import it on a new phone to continue.",
+            T.body(14.sp, p.textDim))
+        Spacer(Modifier.height(10.dp))
+        CyberButton("EXPORT BACKUP", Modifier.fillMaxWidth()) {
+            export.launch("ironcore_backup_${java.time.LocalDate.now()}.json")
+        }
+        Spacer(Modifier.height(8.dp))
+        if (!confirmImport) CyberButton("IMPORT BACKUP", Modifier.fillMaxWidth(), BtnStyle.OUTLINE) { fx.error(); confirmImport = true }
+        else Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            CyberButton("CANCEL", Modifier.weight(1f), BtnStyle.OUTLINE) { confirmImport = false }
+            CyberButton("OVERWRITE & IMPORT", Modifier.weight(1.4f)) { confirmImport = false; import.launch(arrayOf("application/json", "application/octet-stream", "text/plain")) }
+        }
+        if (confirmImport) Txt("> IMPORT REPLACES ALL CURRENT DATA ON THIS PHONE.", T.mono(10.sp, CyberPalette.AMBER), Modifier.padding(top = 6.dp))
+        a.dataMessage?.let { Txt("> $it", T.mono(11.sp, if (it.contains("FAILED")) CyberPalette.DOWN else CyberPalette.UP), Modifier.padding(top = 8.dp)) }
     }
 }
 

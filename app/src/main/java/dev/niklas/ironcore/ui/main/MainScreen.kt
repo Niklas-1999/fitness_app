@@ -330,7 +330,7 @@ private fun Arsenal(s: AppState.Ready, onExecute: (TodayItem) -> Unit) {
                 val done = s.doneToday[l.id]
                 QuestRow(Format.variationName(st), Format.target(st, s.setup.progContext, s.deloadWeek),
                     if (done != null) "DONE TODAY · +${done.xp} XP" else if (l.id in s.states) "IN YOUR PROTOCOL" else "NEW // STARTS CALIBRATED",
-                    done = false, action = "EXECUTE") { onExecute(TodayItem(l.id, ItemKind.LADDER, l.id, 0)) }
+                    done = false, action = "CLEAR") { onExecute(TodayItem(l.id, ItemKind.LADDER, l.id, 0)) }
             }
         }
         OptionCard("CARDIO // WALK · RUN · CYCLE", "Log minutes of any moderate cardio (END, counts toward WHO 150 min)", false) {

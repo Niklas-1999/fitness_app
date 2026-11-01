@@ -181,6 +181,21 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Result line of the last export / import, shown in the DATA panel. */
+    var dataMessage by mutableStateOf<String?>(null)
+
+    fun exportData(uri: android.net.Uri) = viewModelScope.launch {
+        dataMessage = runCatching { dev.niklas.ironcore.data.Backup.export(getApplication(), IronDb.get(getApplication()), uri) }
+            .fold({ "EXPORT COMPLETE // ${it.rows} RECORDS SECURED" }, { "EXPORT FAILED // ${it.message}" })
+    }
+
+    /** Replaces all data; [onDone] restarts the activity so restored settings (theme, sound) apply. */
+    fun importData(uri: android.net.Uri, onDone: () -> Unit) = viewModelScope.launch {
+        runCatching { dev.niklas.ironcore.data.Backup.import(getApplication(), IronDb.get(getApplication()), uri) }
+            .onSuccess { dataMessage = "RESTORE COMPLETE // ${it.rows} RECORDS"; dev.niklas.ironcore.notify.Reminders.schedule(getApplication()); onDone() }
+            .onFailure { dataMessage = "RESTORE FAILED // ${it.message}" }
+    }
+
     fun markAchievementsSeen() = viewModelScope.launch { repo.markAchievementsSeen() }
     fun saveCosmetics(c: CosmeticsEntity) = viewModelScope.launch { repo.saveCosmetics(c) }
     fun setHandle(h: String) = viewModelScope.launch { if (h.isNotBlank()) repo.setHandle(h.trim().uppercase()) }

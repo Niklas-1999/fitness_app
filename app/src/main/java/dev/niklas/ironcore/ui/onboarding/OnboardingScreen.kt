@@ -71,7 +71,7 @@ import dev.niklas.ironcore.ui.theme.T
 import kotlinx.coroutines.delay
 
 @Composable
-fun OnboardingFlow(vm: OnboardingVM, onFinish: (Setup, Plan) -> Unit) {
+fun OnboardingFlow(vm: OnboardingVM, onRestore: (android.net.Uri) -> Unit = {}, restoreMessage: String? = null, onFinish: (Setup, Plan) -> Unit) {
     val p = Cyber.c
     val fx = LocalFx.current
     val flow = vm.flow
@@ -121,6 +121,21 @@ fun OnboardingFlow(vm: OnboardingVM, onFinish: (Setup, Plan) -> Unit) {
                     CyberPanel(Modifier.fillMaxWidth()) {
                         PanelHeader(s.tag, s.title)
                         StepContent(s, vm)
+                    }
+                    if (s == Step.INTRO) {
+                        val restore = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+                            if (uri != null) onRestore(uri)
+                        }
+                        Spacer(Modifier.height(14.dp))
+                        CyberPanel(Modifier.fillMaxWidth()) {
+                            PanelHeader("DB", "EXISTING_OPERATIVE", "NEW PHONE?")
+                            Txt("Restore your profile, progress and settings from an IRONCORE backup file.", T.body(14.sp, Cyber.c.textDim))
+                            Spacer(Modifier.height(10.dp))
+                            CyberButton("RESTORE FROM BACKUP", Modifier.fillMaxWidth(), BtnStyle.OUTLINE) {
+                                restore.launch(arrayOf("application/json", "application/octet-stream", "text/plain"))
+                            }
+                            restoreMessage?.let { Txt("> $it", T.mono(11.sp, if (it.contains("FAILED")) CyberPalette.DOWN else CyberPalette.UP), Modifier.padding(top = 8.dp)) }
+                        }
                     }
                     Spacer(Modifier.height(16.dp))
                 }
